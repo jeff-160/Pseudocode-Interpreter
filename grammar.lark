@@ -1,0 +1,54 @@
+start: "BEGIN" statement+ "END"
+
+TYPE: "INTEGER" | "REAL" | "STRING" | "BOOLEAN" | "DATE"
+
+assignment: NAME "<-" expr
+declaration: "DECLARE" NAME ":" TYPE
+constant: "CONSTANT" NAME "=" expr
+
+COMMENT: /\/\/[^\n]*/
+
+statement: expr NEWLINE
+     | declaration NEWLINE
+     | assignment NEWLINE
+     | constant NEWLINE
+     | "OUTPUT" expr NEWLINE -> output
+     | "INPUT" NAME NEWLINE -> input
+
+?expr: or_expr
+
+?or_expr: and_expr
+        | or_expr "OR" and_expr   -> or_op
+
+?and_expr: equality
+         | and_expr "AND" equality -> and_op
+
+?equality: arith_expr
+         | arith_expr "=" arith_expr   -> eq
+         | arith_expr "<>" arith_expr  -> neq
+         | arith_expr ">" arith_expr   -> gt
+         | arith_expr "<" arith_expr   -> lt
+         | arith_expr ">=" arith_expr   -> gte
+         | arith_expr "<=" arith_expr   -> lte
+
+?arith_expr: arith_expr "+" term   -> add
+           | arith_expr "-" term   -> sub
+           | term
+
+?term: term "*" factor -> mul
+     | term "/" factor -> div
+     | factor
+
+?factor: NUMBER        -> number
+       | STRING        -> string
+       | NAME          -> var
+       | "(" expr ")"
+
+
+%import common.CNAME -> NAME
+%import common.NUMBER
+%import common.ESCAPED_STRING -> STRING
+%ignore COMMENT
+%import common.WS
+%ignore WS
+%import common.NEWLINE
