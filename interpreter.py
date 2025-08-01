@@ -1,9 +1,6 @@
 from lark.visitors import Token, Tree, Interpreter
 from scope import *
-
-class Subroutine:
-    def __init__(self, params, code):
-        self.params, self.code = params, code
+from subroutine import *
 
 class Interpreter(Interpreter):
     def __init__(self):
@@ -91,7 +88,8 @@ class Interpreter(Interpreter):
 
     # i/o
     def output(self, tree):
-        print(self.visit(tree.children[0]))
+        out = [self.visit(child) for child in tree.children if not self.check_newline(child)]
+        print(" ".join(map(str, out)))
 
     def input(self, tree):
         self.scope.define(tree.children[0], Variable(self.types["STRING"], input(), True))
@@ -163,7 +161,7 @@ class Interpreter(Interpreter):
                 params[str(name)] = self.types[type]
             body += 1
 
-        self.procedures[block[0]] = Subroutine(params, block[body:])
+        self.procedures[block[0]] = Procedure(params, block[body:])
 
     def call_procedure(self, tree):
         name = tree.children[0]

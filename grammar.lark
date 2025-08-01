@@ -69,7 +69,7 @@ procedure: "PROCEDURE" NAME param_list? NEWLINE statement+ "ENDPROCEDURE"
 statement: declaration NEWLINE
      | assignment NEWLINE
      | constant NEWLINE
-     | "OUTPUT" expr NEWLINE -> output
+     | "OUTPUT" expr ("," expr)* NEWLINE -> output
      | "INPUT" NAME NEWLINE  -> input
      | expr NEWLINE
      | conditional NEWLINE   -> conditional
