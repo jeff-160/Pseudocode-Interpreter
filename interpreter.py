@@ -1,5 +1,4 @@
-from lark import Lark, Visitor, Tree, Token
-from lark.visitors import Interpreter
+from lark.visitors import Token, Interpreter
 
 class Type:
     def __init__(self, bind, default):
@@ -20,6 +19,9 @@ class Interpreter(Interpreter):
 
         self.vars = {}
 
+    def check_newline(self, stmt):
+        return isinstance(stmt, Token) and stmt.type == "NEWLINE"
+
     # data types
     def number(self, tree):
         n = tree.children[0]
@@ -32,6 +34,9 @@ class Interpreter(Interpreter):
         return tree.children[0] == "TRUE"
 
     # arithmetic operators
+    def neg(self, tree):
+        return -self.visit(tree.children[0])
+
     def add(self, tree):
         return self.visit(tree.children[0]) + self.visit(tree.children[1])
 
@@ -104,7 +109,7 @@ class Interpreter(Interpreter):
     def input(self, tree):
         self.vars[tree.children[0]] = Variable(self.types["STRING"], input(), True)
 
-    # conditional flow
+    # conditionals
     def conditional(self, tree):
         for branch in tree.children[0].children:
             if "if_branch" in branch.data:
@@ -112,6 +117,29 @@ class Interpreter(Interpreter):
                     continue
             
             for stmt in branch.children[1:]:
-                if stmt != "\n":
-                    self.visit(stmt)
+                if self.check_newline(stmt):
+                    continue
+
+                self.visit(stmt)
             return
+        
+    # loops
+    def while_loop(self, tree):
+        block = tree.children[0].children
+
+        while self.visit(block[0]):
+            for stmt in block[1:]:
+                if self.check_newline(stmt):
+                    continue
+                self.visit(stmt)
+
+    def repeat_until(self, tree):
+        block = [line for line in tree.children[0].children if not self.check_newline(line)]
+
+        condition = True
+
+        while condition:
+            for stmt in block[:-1]:
+                self.visit(stmt)
+                
+            condition = not self.visit(block[-1])

@@ -1,6 +1,7 @@
 import sys
 sys.dont_write_bytecode = True
 
+from lark import Lark
 from interpreter import *
 
 with open("test.txt", "r") as f:

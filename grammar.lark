@@ -42,7 +42,8 @@ COMMENT: /\/\/[^\n]*/
      | term "/" factor -> div
      | factor
 
-?factor: NUMBER        -> number
+?factor: "-" factor    -> neg
+       | NUMBER        -> number
        | STRING        -> string
        | BOOLEAN       -> boolean
        | NAME          -> var
@@ -51,9 +52,11 @@ COMMENT: /\/\/[^\n]*/
 if_branch: "IF" expr NEWLINE statement+
 elseif_branch: "ELSEIF" expr NEWLINE statement+
 else_branch: "ELSE" NEWLINE statement+
-
 conditional: if_branch elseif_branch* else_branch? "ENDIF"
 
+while_loop: "WHILE" expr "DO" NEWLINE statement+ "ENDWHILE"
+repeat_until: "REPEAT" NEWLINE statement+ "UNTIL" expr
+// for_loop: "FOR" NAME "<-" expr "TO" expr NEWLINE statement+ "ENDFOR"
 
 statement: declaration NEWLINE
      | assignment NEWLINE
@@ -61,4 +64,6 @@ statement: declaration NEWLINE
      | "OUTPUT" expr NEWLINE -> output
      | "INPUT" NAME NEWLINE  -> input
      | expr NEWLINE
-     | conditional NEWLINE          -> conditional
+     | conditional NEWLINE   -> conditional
+     | while_loop NEWLINE    -> while_loop
+     | repeat_until NEWLINE  -> repeat_until
