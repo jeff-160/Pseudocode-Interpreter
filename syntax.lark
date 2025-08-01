@@ -1,0 +1,93 @@
+%import common.CNAME -> NAME
+%import common.NUMBER
+%import common.ESCAPED_STRING -> STRING
+%ignore COMMENT
+%import common.WS
+%ignore WS
+%import common.NEWLINE
+
+start: "BEGIN" statement+ "END"
+
+TYPE.2: "INTEGER" | "REAL" | "STRING" | "BOOLEAN"
+BOOLEAN.2: "TRUE" | "FALSE"
+
+assignment: NAME "<-" expr
+declaration: "DECLARE" NAME ":" TYPE
+constant: "CONSTANT" NAME "=" expr
+
+COMMENT: /\/\/[^\n]*/
+
+?expr: or_expr
+
+?or_expr: and_expr
+        | or_expr "OR" and_expr   -> or_op
+
+?and_expr: equality
+         | and_expr "AND" equality -> and_op
+
+?equality: arith_expr
+         | arith_expr "=" arith_expr   -> eq
+         | arith_expr "<>" arith_expr  -> neq
+         | arith_expr ">" arith_expr   -> gt
+         | arith_expr "<" arith_expr   -> lt
+         | arith_expr ">=" arith_expr   -> gte
+         | arith_expr "<=" arith_expr   -> lte
+
+?arith_expr: arith_expr "+" term   -> add
+           | arith_expr "-" term   -> sub
+           | term
+
+?term: term "*" factor -> mul
+     | term "/" factor -> div
+     | factor
+
+?factor: "-" factor    -> neg
+       | NUMBER        -> number
+       | STRING        -> string
+       | BOOLEAN       -> boolean
+       | NAME          -> var
+       | "(" expr ")"
+       | NAME arg_list -> call_function
+       | factor "[" expr "]" -> get_index
+       | "LENGTH" "(" expr ")"  -> length
+       | TYPE "(" expr ")" -> type_cast
+
+if_branch: "IF" expr "THEN" NEWLINE statement+
+elseif_branch: "ELSEIF" expr "THEN" NEWLINE statement+
+else_branch: "ELSE" NEWLINE statement+
+conditional: if_branch elseif_branch* else_branch? "ENDIF"
+
+case_branch: expr ":" statement
+otherwise_branch: "OTHERWISE" ":" statement
+switch: "CASE" "OF" NAME NEWLINE case_branch+ otherwise_branch? "ENDCASE"
+
+while_loop: "WHILE" expr "DO" NEWLINE statement+ "ENDWHILE"
+repeat_until: "REPEAT" NEWLINE statement+ "UNTIL" expr
+
+step: "STEP" expr
+for_loop: "FOR" NAME "<-" expr "TO" expr step? NEWLINE statement+ "ENDFOR"
+
+param: NAME ":" TYPE
+param_list: "(" param ("," param)* ")"
+
+arg_list: "(" (expr ("," expr)*)? ")"
+opt_arg_list: "(" expr ("," expr)* ")"
+
+procedure: "PROCEDURE" NAME param_list? NEWLINE statement+ "ENDPROCEDURE"
+function: "FUNCTION" NAME param_list? "RETURNS" TYPE NEWLINE statement+ "ENDFUNCTION"
+
+statement: declaration NEWLINE
+     | assignment NEWLINE
+     | constant NEWLINE
+     | "OUTPUT" expr ("," expr)* NEWLINE -> output
+     | "INPUT" NAME NEWLINE  -> input
+     | expr NEWLINE
+     | conditional NEWLINE   -> conditional
+     | switch NEWLINE        -> switch
+     | while_loop NEWLINE    -> while_loop
+     | repeat_until NEWLINE  -> repeat_until
+     | for_loop NEWLINE      -> for_loop
+     | procedure NEWLINE     -> procedure
+     | "CALL" NAME opt_arg_list? NEWLINE      -> call_procedure
+     | function NEWLINE      -> function
+     | "RETURN" expr NEWLINE   -> return_stmt
