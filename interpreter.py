@@ -12,7 +12,7 @@ class Interpreter(Interpreter):
         }
 
         self.scope = Scope()
-        self.in_function = False
+        self.call_stack = []
 
     def check_newline(self, stmt):
         return isinstance(stmt, Token) and stmt.type == "NEWLINE"
@@ -182,6 +182,8 @@ class Interpreter(Interpreter):
         self.scope.define(block[0], Procedure(params, block[body:]))
 
     def call_procedure(self, tree):
+        self.call_stack.append("procedure")
+
         name = tree.children[0]
         
         try:
@@ -196,6 +198,7 @@ class Interpreter(Interpreter):
                 self.visit(line)
             
         self.scope.remove_scope()
+        self.call_stack.pop()
 
     def function(self, tree):
         block = tree.children[0].children
@@ -205,7 +208,7 @@ class Interpreter(Interpreter):
         self.scope.define(str(block[0]), Function(self.types[block[body]], params, block[body + 1:]))
 
     def call_function(self, tree):
-        self.in_function = True
+        self.call_stack.append("function")
 
         name = tree.children[0]
         
@@ -224,15 +227,14 @@ class Interpreter(Interpreter):
             ret_value = rc.value
             assert type(ret_value) == func.return_type.bind, f'Return type mismatch!'
 
-            self.in_function = False
             return ret_value
             
         self.scope.remove_scope()
+        self.call_stack.pop()
 
-        self.in_function = False
         return func.return_type.default
     
     def return_stmt(self, tree):
-        assert self.in_function, "RETURN statement ouside Function block!"
+        assert len(self.call_stack) and self.call_stack[-1] == "function", "RETURN statement ouside Function block!"
 
         raise ReturnCall(self.visit(tree.children[0]))
