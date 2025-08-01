@@ -1,13 +1,8 @@
 ## Introduction
 
-This is a toy interpreted language based on the syntax rules of the H2 Computing pseudocode guide.  
-
----
-## Requirements
-
-```
-pip install lark
-```
+A toy interpreted language based on the H2 Computing pseudocode guide.  
+  
+This is meant as a tool to help students practice and better familiarise themselves with the syntax rules of pseudocode.
 
 ---
 
@@ -22,3 +17,11 @@ pip install lark
 - [x] subroutines (PROCEDURE, FUNCTION)
 - [x] 1d-arrays
 - [ ] 2d-arrays
+
+---
+
+## Requirements
+
+```bash
+pip install lark
+```
