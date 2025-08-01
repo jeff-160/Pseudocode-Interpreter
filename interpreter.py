@@ -3,7 +3,9 @@ from scope import *
 from subroutine import *
 
 class Interpreter(Interpreter):
-    def __init__(self):
+    def __init__(self, no_newlines):
+        self.no_newlines = no_newlines
+
         self.types = {
             type.name: type
 
@@ -40,7 +42,9 @@ class Interpreter(Interpreter):
         return float(n) if '.' in n else int(n)
     
     def string(self, tree):
-        return tree.children[0][1:-1]
+        import ast
+
+        return ast.literal_eval(tree.children[0])
     
     def boolean(self, tree):
         return tree.children[0] == "TRUE"
@@ -136,7 +140,7 @@ class Interpreter(Interpreter):
     # i/o
     def output(self, tree):
         out = [self.visit(child) for child in tree.children if not self.check_newline(child)]
-        print(" ".join(map(str, out)))
+        print(" ".join(map(str, out)), end=("" if self.no_newlines else "\n"))
 
     def input(self, tree):
         self.scope.define(tree.children[0], Variable(self.types["STRING"], input(), True))
