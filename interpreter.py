@@ -5,10 +5,14 @@ from subroutine import *
 class Interpreter(Interpreter):
     def __init__(self):
         self.types = {
-            "INTEGER": Type(int, 0),
-            "REAL": Type(float, 0.0),
-            "STRING": Type(str, ""),
-            "BOOLEAN": Type(bool, False)
+            type.name: type
+
+            for type in [
+                Type("INTEGER", int, 0),
+                Type("REAL", float, 0.0),
+                Type("STRING", str, ""),
+                Type("BOOLEAN", bool, False)
+            ]
         }
 
         self.scope = Scope()
@@ -16,6 +20,14 @@ class Interpreter(Interpreter):
 
     def check_newline(self, stmt):
         return isinstance(stmt, Token) and stmt.type == "NEWLINE"
+    
+    def get_type(self, type):
+        if type in [Procedure, Function]:
+            return type.__name__
+
+        for i, _ in self.types.items():
+            if type == self.types[i].bind:
+                return i
 
     # data types
     def number(self, tree):
@@ -90,9 +102,9 @@ class Interpreter(Interpreter):
     def get_index(self, tree):
         value, index = map(self.visit, tree.children)
 
-        assert isinstance(value, str), "Cannot apply indexing to non-string!"
-        assert isinstance(index, int), "Index must be an integer!"
-        assert index - 1 < len(value), f'Index "{index}" out of bounds!'
+        assert isinstance(value, str), f'Cannot apply indexing to "{self.get_type(type(value))}"'
+        assert isinstance(index, int), "Index must be an integer"
+        assert index - 1 < len(value), f'Index "{index}" out of bounds'
 
         return value[index - 1]
 
@@ -168,7 +180,7 @@ class Interpreter(Interpreter):
         for i in range(len(args)):
             arg = self.visit(args[i])
 
-            assert type(arg) == params[i][1].bind, f'Type mismatch in argument!'
+            assert type(arg) == params[i][1].bind, f'Expected "{params[i][1].name}" argument type, got "{self.get_type(type(arg))}"'
 
             self.scope.define(params[i][0], Variable(params[i][1], arg, True))
 
@@ -199,7 +211,7 @@ class Interpreter(Interpreter):
         try:
             proc = self.scope.get(name)
         except:
-            raise Exception(f'Procedure "{name}" is not defined!')
+            raise Exception(f'Procedure "{name}" is not defined')
 
         self.set_args([*proc.params.items()], tree.children[1].children if len(tree.children) > 1 else [])
 
@@ -225,7 +237,7 @@ class Interpreter(Interpreter):
         try:
             func = self.scope.get(name)
         except:
-            raise Exception(f'Function "{name}" is not defined!')
+            raise Exception(f'Function "{name}" is not defined')
 
         self.set_args([*func.params.items()], tree.children[1].children)
 
@@ -234,7 +246,7 @@ class Interpreter(Interpreter):
                 if not self.check_newline(line):
                     self.visit(line)
         except ReturnCall as rc:
-            assert type(rc.value) == func.return_type.bind, f'Return type mismatch!'
+            assert type(rc.value) == func.return_type.bind, f'Expected "{func.return_type.name}" RETURN type, got "{self.get_type(type(rc.value))}"'
 
             return rc.value
             
@@ -244,7 +256,7 @@ class Interpreter(Interpreter):
         return func.return_type.default
     
     def return_stmt(self, tree):
-        assert len(self.call_stack) and self.call_stack[-1] == "function", "RETURN statement ouside Function block!"
+        assert len(self.call_stack) and self.call_stack[-1] == "function", "RETURN statement ouside Function block"
 
         raise ReturnCall(self.visit(tree.children[0]))
     
@@ -252,14 +264,14 @@ class Interpreter(Interpreter):
     def length(self, tree):
         value = self.visit(tree.children[0])
         
-        assert isinstance(value, str), f'Cannot apply LENGTH() to non-string!'
+        assert isinstance(value, str), f'Cannot apply LENGTH() to "{self.get_type(type(value))}"'
 
         return len(value)
     
     def type_cast(self, tree):
-        cast, value = self.types[tree.children[0]].bind, self.visit(tree.children[1])
+        cast, value = self.types[tree.children[0]], self.visit(tree.children[1])
 
         try:
-            return cast(value)
+            return cast.bind(value)
         except:
-            raise Exception("Invalid conversion")
+            raise Exception(f'Cannot cast "{self.get_type(type(value))}" to "{cast.name}"')
