@@ -86,6 +86,16 @@ class Interpreter(Interpreter):
         name, value = tree.children[0], self.visit(tree.children[1])
         self.scope.assign(name, value)
 
+    # indexing
+    def get_index(self, tree):
+        value, index = map(self.visit, tree.children)
+
+        assert isinstance(value, str), "Cannot apply indexing to non-string!"
+        assert isinstance(index, int), "Index must be an integer!"
+        assert index - 1 < len(value), f'Index "{index}" out of bounds!'
+
+        return value[index - 1]
+
     # i/o
     def output(self, tree):
         out = [self.visit(child) for child in tree.children if not self.check_newline(child)]
@@ -224,10 +234,9 @@ class Interpreter(Interpreter):
                 if not self.check_newline(line):
                     self.visit(line)
         except ReturnCall as rc:
-            ret_value = rc.value
-            assert type(ret_value) == func.return_type.bind, f'Return type mismatch!'
+            assert type(rc.value) == func.return_type.bind, f'Return type mismatch!'
 
-            return ret_value
+            return rc.value
             
         self.scope.remove_scope()
         self.call_stack.pop()
@@ -238,3 +247,11 @@ class Interpreter(Interpreter):
         assert len(self.call_stack) and self.call_stack[-1] == "function", "RETURN statement ouside Function block!"
 
         raise ReturnCall(self.visit(tree.children[0]))
+    
+    # builtin functions
+    def length(self, tree):
+        value = self.visit(tree.children[0])
+        
+        assert isinstance(value, str), f'Cannot apply LENGTH() to non-string!'
+
+        return len(value)

@@ -49,9 +49,11 @@ COMMENT: /\/\/[^\n]*/
        | NAME          -> var
        | "(" expr ")"
        | NAME arg_list -> call_function
+       | factor "[" expr "]" -> get_index
+       | "LENGTH" "(" expr ")"  -> length
 
-if_branch: "IF" expr NEWLINE statement+
-elseif_branch: "ELSEIF" expr NEWLINE statement+
+if_branch: "IF" expr "THEN" NEWLINE statement+
+elseif_branch: "ELSEIF" expr "THEN" NEWLINE statement+
 else_branch: "ELSE" NEWLINE statement+
 conditional: if_branch elseif_branch* else_branch? "ENDIF"
 
