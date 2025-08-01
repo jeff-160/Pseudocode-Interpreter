@@ -12,7 +12,6 @@ class Interpreter(Interpreter):
         }
 
         self.scope = Scope()
-        self.procedures = {}
 
     def check_newline(self, stmt):
         return isinstance(stmt, Token) and stmt.type == "NEWLINE"
@@ -161,13 +160,17 @@ class Interpreter(Interpreter):
                 params[str(name)] = self.types[type]
             body += 1
 
-        self.procedures[block[0]] = Procedure(params, block[body:])
+        self.scope.define(block[0], Procedure(params, block[body:]))
 
     def call_procedure(self, tree):
         name = tree.children[0]
-        assert name in self.procedures, f'Procedure "{name}" is not defined!'
+        
+        try:
+            proc = self.scope.get(name)
+        except:
+            raise Exception(f'Procedure "{name}" is not defined!')
 
-        params = [*self.procedures[name].params.items()]
+        params = [*proc.params.items()]
         args = tree.children[1].children if len(tree.children) > 1 else []
 
         assert len(params) == len(args), f"Expected {len(params)} arguments, got {len(args)}"
@@ -181,8 +184,11 @@ class Interpreter(Interpreter):
 
             self.scope.define(params[i][0], Variable(params[i][1], arg, True))
 
-        for line in self.procedures[name].code:
+        for line in proc.code:
             if not self.check_newline(line):
                 self.visit(line)
             
         self.scope.remove_scope()
+
+    def function(self, tree):
+        ...
