@@ -13,3 +13,7 @@ class Function(Procedure):
 
     def __str__(self):
         return "<Function>"
+    
+class ReturnCall(Exception):
+    def __init__(self, value):
+        self.value = value

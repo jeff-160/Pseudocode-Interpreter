@@ -216,16 +216,16 @@ class Interpreter(Interpreter):
 
         self.set_args([*func.params.items()], tree.children[1].children)
 
-        for line in func.code:
-            if not self.check_newline(line):
-                if getattr(line, "data") == "return_stmt":
-                    ret_value = self.return_stmt(line)
-                    assert type(ret_value) == func.return_type.bind, f'Return type mismatch!'
+        try:
+            for line in func.code:
+                if not self.check_newline(line):
+                    self.visit(line)
+        except ReturnCall as rc:
+            ret_value = rc.value
+            assert type(ret_value) == func.return_type.bind, f'Return type mismatch!'
 
-                    self.in_function = False
-                    return ret_value
-
-                self.visit(line)
+            self.in_function = False
+            return ret_value
             
         self.scope.remove_scope()
 
@@ -235,4 +235,4 @@ class Interpreter(Interpreter):
     def return_stmt(self, tree):
         assert self.in_function, "RETURN statement ouside Function block!"
 
-        return self.visit(tree.children[0])
+        raise ReturnCall(self.visit(tree.children[0]))
