@@ -1,12 +1,9 @@
-from lark.visitors import Token, Interpreter
+from lark.visitors import Token, Tree, Interpreter
+from scope import *
 
-class Type:
-    def __init__(self, bind, default):
-        self.bind, self.default = bind, default
-
-class Variable:
-    def __init__(self, type, value, mutable):
-        self.type, self.value, self.mutable = type, value, mutable
+class Subroutine:
+    def __init__(self, params, code):
+        self.params, self.code = params, code
 
 class Interpreter(Interpreter):
     def __init__(self):
@@ -17,7 +14,8 @@ class Interpreter(Interpreter):
             "BOOLEAN": Type(bool, False)
         }
 
-        self.vars = {}
+        self.scope = Scope()
+        self.procedures = {}
 
     def check_newline(self, stmt):
         return isinstance(stmt, Token) and stmt.type == "NEWLINE"
@@ -77,38 +75,26 @@ class Interpreter(Interpreter):
     
     # variables
     def var(self, tree):
-        name = tree.children[0]
+        return self.scope.get(tree.children[0])
 
-        assert name in self.vars, f'Variable "{name}" is not defined!'
-
-        return self.vars[name].value
-    
     def declaration(self, tree):
         name, type = tree.children
-
-        self.vars[str(name)] = Variable(self.types[type], self.types[type].default, True)
-
-    def assignment(self, tree):
-        name, value = tree.children[0], self.visit(tree.children[1])
-
-        assert name in self.vars, f'Variable "{name}" is not declared yet!'
-        assert self.vars[name].mutable, f'Cannot assign to constant "{name}"!'
-        assert type(value) == self.vars[name].type.bind, "Type mismatch!"
-        
-        self.vars[name].value = value
+        self.scope.define(str(name), Variable(self.types[type], self.types[type].default, True))
 
     def constant(self, tree):
         name, value = tree.children[0], self.visit(tree.children[1])
-        
-        self.vars[str(name)] = Variable(None, value, False)
+        self.scope.define(str(name), Variable(None, value, False))
+
+    def assignment(self, tree):
+        name, value = tree.children[0], self.visit(tree.children[1])
+        self.scope.assign(name, value)
 
     # i/o
     def output(self, tree):
-        value = self.visit(tree.children[0])
-        print(value)
+        print(self.visit(tree.children[0]))
 
     def input(self, tree):
-        self.vars[tree.children[0]] = Variable(self.types["STRING"], input(), True)
+        self.scope.define(tree.children[0], Variable(self.types["STRING"], input(), True))
 
     # conditionals
     def conditional(self, tree):
@@ -151,12 +137,54 @@ class Interpreter(Interpreter):
         iterator, start, stop = block[0], self.visit(block[1]), self.visit(block[2]) + (-1 if step < 0 else 1)
 
         assert step != 0, "Iteration step cannot be 0"
+
+        self.scope.add_scope()
         
-        self.vars[iterator] = Variable(self.types['INTEGER'], start, True)
+        self.scope.define(iterator, Variable(self.types['INTEGER'], start, True))
 
         for i in range(start, stop, step):
-            self.vars[iterator].value = i
+            self.scope.assign(iterator, i)
 
             for stmt in block[4:] if is_step else block[3:]:
                 if not self.check_newline(stmt):
                     self.visit(stmt)
+
+        self.scope.remove_scope()
+
+    # subroutines
+    def procedure(self, tree):
+        block = tree.children[0].children
+        body = 1
+        
+        params = {}
+        if isinstance(block[1], Tree) and block[1].data == "param_list":
+            for param in block[1].children:
+                name, type = param.children
+                params[str(name)] = self.types[type]
+            body += 1
+
+        self.procedures[block[0]] = Subroutine(params, block[body:])
+
+    def call_procedure(self, tree):
+        name = tree.children[0]
+        assert name in self.procedures, f'Procedure "{name}" is not defined!'
+
+        params = [*self.procedures[name].params.items()]
+        args = tree.children[1].children if len(tree.children) > 1 else []
+
+        assert len(params) == len(args), f"Expected {len(params)} arguments, got {len(args)}"
+
+        self.scope.add_scope()
+
+        for i in range(len(args)):
+            arg = self.visit(args[i])
+
+            assert type(arg) == params[i][1].bind, f'Type mismatch in argument!'
+
+            self.scope.define(params[i][0], Variable(params[i][1], arg, True))
+
+        for line in self.procedures[name].code:
+            if not self.check_newline(line):
+                self.visit(line)
+            
+        self.scope.remove_scope()

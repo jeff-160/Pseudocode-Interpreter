@@ -60,6 +60,12 @@ repeat_until: "REPEAT" NEWLINE statement+ "UNTIL" expr
 step: "STEP" expr
 for_loop: "FOR" NAME "<-" expr "TO" expr step? NEWLINE statement+ "ENDFOR"
 
+param: NAME ":" TYPE
+param_list: "(" param ("," param)* ")"
+arg_list: "(" expr ("," expr)* ")"
+
+procedure: "PROCEDURE" NAME param_list? NEWLINE statement+ "ENDPROCEDURE"
+
 statement: declaration NEWLINE
      | assignment NEWLINE
      | constant NEWLINE
@@ -70,3 +76,5 @@ statement: declaration NEWLINE
      | while_loop NEWLINE    -> while_loop
      | repeat_until NEWLINE  -> repeat_until
      | for_loop NEWLINE      -> for_loop
+     | procedure NEWLINE     -> procedure
+     | "CALL" NAME arg_list?          -> call_procedure
