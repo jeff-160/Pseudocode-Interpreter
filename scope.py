@@ -14,9 +14,9 @@ class Scope:
     def get(self, name):
         for scope in self.stack[::-1]:
             if name in scope:
-                return scope[name].value
+                return getattr(scope[name], "value", scope[name])
         
-        raise Exception(f'Variable {name}" is not defined!')
+        raise Exception(f'Variable "{name}" is not defined!')
     
     def define(self, name, variable):
         self.stack[-1][name] = variable
@@ -24,6 +24,7 @@ class Scope:
     def assign(self, name, value):
         for scope in self.stack[::-1]:
             if name in scope:
+                assert isinstance(scope[name], Variable), f'Cannot assign to "{str(scope[name])}"'
                 assert scope[name].mutable, f'Cannot assign to constant "{name}"!'
                 assert type(value) == scope[name].type.bind, "Type mismatch!"
                 

@@ -48,6 +48,7 @@ COMMENT: /\/\/[^\n]*/
        | BOOLEAN       -> boolean
        | NAME          -> var
        | "(" expr ")"
+       | NAME arg_list -> call_function
 
 if_branch: "IF" expr NEWLINE statement+
 elseif_branch: "ELSEIF" expr NEWLINE statement+
@@ -62,9 +63,12 @@ for_loop: "FOR" NAME "<-" expr "TO" expr step? NEWLINE statement+ "ENDFOR"
 
 param: NAME ":" TYPE
 param_list: "(" param ("," param)* ")"
-arg_list: "(" expr ("," expr)* ")"
+
+arg_list: "(" (expr ("," expr)*)? ")"
+opt_arg_list: "(" expr ("," expr)* ")"
 
 procedure: "PROCEDURE" NAME param_list? NEWLINE statement+ "ENDPROCEDURE"
+function: "FUNCTION" NAME param_list? "RETURNS" TYPE NEWLINE statement+ "ENDFUNCTION"
 
 statement: declaration NEWLINE
      | assignment NEWLINE
@@ -77,4 +81,6 @@ statement: declaration NEWLINE
      | repeat_until NEWLINE  -> repeat_until
      | for_loop NEWLINE      -> for_loop
      | procedure NEWLINE     -> procedure
-     | "CALL" NAME arg_list?          -> call_procedure
+     | "CALL" NAME opt_arg_list?          -> call_procedure
+     | function NEWLINE      -> function
+     | "RETURN" expr NEWLINE   -> return_stmt

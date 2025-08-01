@@ -12,6 +12,7 @@ class Interpreter(Interpreter):
         }
 
         self.scope = Scope()
+        self.in_function = False
 
     def check_newline(self, stmt):
         return isinstance(stmt, Token) and stmt.type == "NEWLINE"
@@ -149,30 +150,7 @@ class Interpreter(Interpreter):
         self.scope.remove_scope()
 
     # subroutines
-    def procedure(self, tree):
-        block = tree.children[0].children
-        body = 1
-        
-        params = {}
-        if isinstance(block[1], Tree) and block[1].data == "param_list":
-            for param in block[1].children:
-                name, type = param.children
-                params[str(name)] = self.types[type]
-            body += 1
-
-        self.scope.define(block[0], Procedure(params, block[body:]))
-
-    def call_procedure(self, tree):
-        name = tree.children[0]
-        
-        try:
-            proc = self.scope.get(name)
-        except:
-            raise Exception(f'Procedure "{name}" is not defined!')
-
-        params = [*proc.params.items()]
-        args = tree.children[1].children if len(tree.children) > 1 else []
-
+    def set_args(self, params, args):
         assert len(params) == len(args), f"Expected {len(params)} arguments, got {len(args)}"
 
         self.scope.add_scope()
@@ -184,6 +162,35 @@ class Interpreter(Interpreter):
 
             self.scope.define(params[i][0], Variable(params[i][1], arg, True))
 
+    def get_params(self, param_tree):
+        offset = 1
+        params = {}
+
+        if isinstance(param_tree, Tree) and param_tree.data == "param_list":
+            for param in param_tree.children:
+                name, type = param.children
+                params[str(name)] = self.types[type]
+            offset += 1
+
+        return params, offset
+
+    def procedure(self, tree):
+        block = tree.children[0].children
+        
+        params, body = self.get_params(block[1])
+
+        self.scope.define(block[0], Procedure(params, block[body:]))
+
+    def call_procedure(self, tree):
+        name = tree.children[0]
+        
+        try:
+            proc = self.scope.get(name)
+        except:
+            raise Exception(f'Procedure "{name}" is not defined!')
+
+        self.set_args([*proc.params.items()], tree.children[1].children if len(tree.children) > 1 else [])
+
         for line in proc.code:
             if not self.check_newline(line):
                 self.visit(line)
@@ -191,4 +198,41 @@ class Interpreter(Interpreter):
         self.scope.remove_scope()
 
     def function(self, tree):
-        ...
+        block = tree.children[0].children
+
+        params, body = self.get_params(block[1])
+
+        self.scope.define(str(block[0]), Function(self.types[block[body]], params, block[body + 1:]))
+
+    def call_function(self, tree):
+        self.in_function = True
+
+        name = tree.children[0]
+        
+        try:
+            func = self.scope.get(name)
+        except:
+            raise Exception(f'Procedure "{name}" is not defined!')
+
+        self.set_args([*func.params.items()], tree.children[1].children)
+
+        for line in func.code:
+            if not self.check_newline(line):
+                if getattr(line, "data") == "return_stmt":
+                    ret_value = self.return_stmt(line)
+                    assert type(ret_value) == func.return_type.bind, f'Return type mismatch!'
+
+                    self.in_function = False
+                    return ret_value
+
+                self.visit(line)
+            
+        self.scope.remove_scope()
+
+        self.in_function = False
+        return func.return_type.default
+    
+    def return_stmt(self, tree):
+        assert self.in_function, "RETURN statement ouside Function block!"
+
+        return self.visit(tree.children[0])
