@@ -145,14 +145,18 @@ class Interpreter(Interpreter):
     def for_loop(self, tree):
         block = tree.children[0].children
 
-        iterator, start, end = block[0], self.visit(block[1]), self.visit(block[2])
+        is_step = getattr(block[3], "data", None) == 'step'
+
+        step = self.visit(block[3])[0] if is_step else 1
+        iterator, start, stop = block[0], self.visit(block[1]), self.visit(block[2]) + (-1 if step < 0 else 1)
+
+        assert step != 0, "Iteration step cannot be 0"
         
         self.vars[iterator] = Variable(self.types['INTEGER'], start, True)
 
-        for i in range(start, end + 1):
-            for stmt in block[3:]:
+        for i in range(start, stop, step):
+            self.vars[iterator].value = i
+
+            for stmt in block[4:] if is_step else block[3:]:
                 if not self.check_newline(stmt):
                     self.visit(stmt)
-            
-            if i < end:
-                self.vars[iterator].value += 1
