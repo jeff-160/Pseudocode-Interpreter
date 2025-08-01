@@ -57,6 +57,10 @@ elseif_branch: "ELSEIF" expr "THEN" NEWLINE statement+
 else_branch: "ELSE" NEWLINE statement+
 conditional: if_branch elseif_branch* else_branch? "ENDIF"
 
+case_branch: expr ":" statement
+otherwise_branch: "OTHERWISE" ":" statement
+switch: "CASE" "OF" NAME NEWLINE case_branch+ otherwise_branch? "ENDCASE"
+
 while_loop: "WHILE" expr "DO" NEWLINE statement+ "ENDWHILE"
 repeat_until: "REPEAT" NEWLINE statement+ "UNTIL" expr
 
@@ -79,10 +83,11 @@ statement: declaration NEWLINE
      | "INPUT" NAME NEWLINE  -> input
      | expr NEWLINE
      | conditional NEWLINE   -> conditional
+     | switch NEWLINE        -> switch
      | while_loop NEWLINE    -> while_loop
      | repeat_until NEWLINE  -> repeat_until
      | for_loop NEWLINE      -> for_loop
      | procedure NEWLINE     -> procedure
-     | "CALL" NAME opt_arg_list?          -> call_procedure
+     | "CALL" NAME opt_arg_list? NEWLINE      -> call_procedure
      | function NEWLINE      -> function
      | "RETURN" expr NEWLINE   -> return_stmt

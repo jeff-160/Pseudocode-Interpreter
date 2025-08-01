@@ -128,6 +128,25 @@ class Interpreter(Interpreter):
                     self.visit(stmt)
             return
         
+    def switch(self, tree):
+        block = tree.children[0].children
+
+        identifier = block[0]
+
+        for branch in block[1:]:
+            if self.check_newline(branch):
+                continue
+
+            if branch.data == "otherwise_branch":
+                self.visit(branch)
+                return
+
+            condition = self.visit(branch.children[0])
+            
+            if condition == self.scope.get(identifier):
+                self.visit(branch.children[1])
+                return
+     
     # loops
     def while_loop(self, tree):
         block = tree.children[0].children
@@ -212,8 +231,9 @@ class Interpreter(Interpreter):
             proc = self.scope.get(name)
         except:
             raise Exception(f'Procedure "{name}" is not defined')
-
-        self.set_args([*proc.params.items()], tree.children[1].children if len(tree.children) > 1 else [])
+        
+        args = tree.children[1].children if len([i for i in tree.children if not self.check_newline(i)]) > 1 else []
+        self.set_args([*proc.params.items()], args)
 
         for line in proc.code:
             if not self.check_newline(line):
