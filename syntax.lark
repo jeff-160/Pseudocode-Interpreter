@@ -11,8 +11,12 @@ start: "BEGIN" statement+ "END"
 TYPE.2: "INTEGER" | "REAL" | "STRING" | "BOOLEAN"
 BOOLEAN.2: "TRUE" | "FALSE"
 
+?type: TYPE
+     | "ARRAY" "[" expr ":" expr "]" "OF" TYPE
+
 assignment: NAME "<-" expr
-declaration: "DECLARE" NAME ":" TYPE
+index_assignment: NAME "[" expr "]" "<-" expr
+declaration: "DECLARE" NAME ":" type
 constant: "CONSTANT" NAME "=" expr
 
 COMMENT: /\/\/[^\n]*/
@@ -77,6 +81,7 @@ procedure: "PROCEDURE" NAME param_list? NEWLINE statement+ "ENDPROCEDURE"
 function: "FUNCTION" NAME param_list? "RETURNS" TYPE NEWLINE statement+ "ENDFUNCTION"
 
 statement: declaration NEWLINE
+     | index_assignment NEWLINE
      | assignment NEWLINE
      | constant NEWLINE
      | "OUTPUT" expr ("," expr)* NEWLINE -> output

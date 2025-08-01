@@ -11,7 +11,8 @@ class Interpreter(Interpreter):
                 Type("INTEGER", int, 0),
                 Type("REAL", float, 0.0),
                 Type("STRING", str, ""),
-                Type("BOOLEAN", bool, False)
+                Type("BOOLEAN", bool, False),
+                Type("ARRAY", list, [])
             ]
         }
 
@@ -28,6 +29,10 @@ class Interpreter(Interpreter):
         for i, _ in self.types.items():
             if type == self.types[i].bind:
                 return i
+            
+    def check_index(self, collection, index):
+        assert isinstance(index, int), "Index must be an integer"
+        assert index in range(1, len(collection) + 1), f'Index "{index}" out of bounds'
 
     # data types
     def number(self, tree):
@@ -88,7 +93,17 @@ class Interpreter(Interpreter):
 
     def declaration(self, tree):
         name, type = tree.children
-        self.scope.define(str(name), Variable(self.types[type], self.types[type].default, True))
+
+        if getattr(type, "data", None):
+            l, u, type = *map(self.visit, type.children[:2]), type.children[2]
+            
+            assert isinstance(l, int) and isinstance(u, int), "Array indices must be integers"
+            assert u > l, "Invalid array bounds "
+            assert l == 1, "Array must be 1-indexed"
+
+            self.scope.define(str(name), Variable(self.types["ARRAY"], [self.types[type].default] * u, True))
+        else:
+            self.scope.define(str(name), Variable(self.types[type], self.types[type].default, True))
 
     def constant(self, tree):
         name, value = tree.children[0], self.visit(tree.children[1])
@@ -98,13 +113,23 @@ class Interpreter(Interpreter):
         name, value = tree.children[0], self.visit(tree.children[1])
         self.scope.assign(name, value)
 
+    def index_assignment(self, tree):
+        name, index, value = tree.children[0], *map(self.visit, tree.children[1:])
+
+        var = self.scope.get(name)
+    
+        assert isinstance(var, list), f'Cannot apply index assignment to "{self.get_type(type(var))}"'
+        assert type(value) == type(var[0]), f'Assignment type mismatch, expected "{self.get_type(type(var[0]))}"'
+        self.check_index(var, index)
+
+        self.scope.assign_index(name, index - 1, value)
+
     # indexing
     def get_index(self, tree):
         value, index = map(self.visit, tree.children)
 
-        assert isinstance(value, str), f'Cannot apply indexing to "{self.get_type(type(value))}"'
-        assert isinstance(index, int), "Index must be an integer"
-        assert index - 1 < len(value), f'Index "{index}" out of bounds'
+        assert type(value) in [str, list], f'Cannot apply indexing to "{self.get_type(type(value))}"'
+        self.check_index(value, index)
 
         return value[index - 1]
 
@@ -284,7 +309,7 @@ class Interpreter(Interpreter):
     def length(self, tree):
         value = self.visit(tree.children[0])
         
-        assert isinstance(value, str), f'Cannot apply LENGTH() to "{self.get_type(type(value))}"'
+        assert type(value) in [str, list], f'Cannot apply LENGTH() to "{self.get_type(type(value))}"'
 
         return len(value)
     

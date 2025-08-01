@@ -24,13 +24,23 @@ class Scope:
     def assign(self, name, value):
         for scope in self.stack[::-1]:
             if name in scope:
+                assert scope[name].type.name != "ARRAY", f'Cannot assign to "ARRAY"'
                 assert isinstance(scope[name], Variable), f'Cannot assign to "{str(scope[name])}"'
                 assert scope[name].mutable, f'Cannot assign to constant "{name}"'
                 assert type(value) == scope[name].type.bind, f'Assignment type mismatch, expected "{scope[name].type.name}"'
                 
                 scope[name].value = value
                 return
+            
         raise Exception(f'Variable "{name}" is not declared')
+    
+    def assign_index(self, name, index, value):
+        for scope in self.stack[::-1]:
+            if name in scope:
+                scope[name].value[index] = value
+                return
+
+        raise Exception(f'Array "{name}" is not declared')
     
     def add_scope(self):
         self.stack.append({})
