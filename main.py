@@ -4,6 +4,10 @@ sys.dont_write_bytecode = True
 from interpreter import *
 
 with open("test.txt", "r") as f:
-    program = f.read()
+    program = "\n".join([line.strip() for line in f.read().split("\n")])
 
-parser.parse(program)
+with open("grammar.lark", "r") as f:
+    grammar = f.read().strip()
+
+parser = Lark(grammar, parser='lalr')
+Interpreter().visit(parser.parse(program))

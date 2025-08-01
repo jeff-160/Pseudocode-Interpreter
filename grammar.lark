@@ -1,19 +1,22 @@
+%import common.CNAME -> NAME
+%import common.NUMBER
+%import common.ESCAPED_STRING -> STRING
+%ignore COMMENT
+%import common.WS
+%ignore WS
+%import common.NEWLINE
+
+
 start: "BEGIN" statement+ "END"
 
 TYPE: "INTEGER" | "REAL" | "STRING" | "BOOLEAN" | "DATE"
+BOOLEAN.2: "TRUE" | "FALSE"
 
 assignment: NAME "<-" expr
 declaration: "DECLARE" NAME ":" TYPE
 constant: "CONSTANT" NAME "=" expr
 
 COMMENT: /\/\/[^\n]*/
-
-statement: expr NEWLINE
-     | declaration NEWLINE
-     | assignment NEWLINE
-     | constant NEWLINE
-     | "OUTPUT" expr NEWLINE -> output
-     | "INPUT" NAME NEWLINE -> input
 
 ?expr: or_expr
 
@@ -41,14 +44,21 @@ statement: expr NEWLINE
 
 ?factor: NUMBER        -> number
        | STRING        -> string
+       | BOOLEAN       -> boolean
        | NAME          -> var
        | "(" expr ")"
 
+if_branch: "IF" expr NEWLINE statement+
+elseif_branch: "ELSEIF" expr NEWLINE statement+
+else_branch: "ELSE" NEWLINE statement+
 
-%import common.CNAME -> NAME
-%import common.NUMBER
-%import common.ESCAPED_STRING -> STRING
-%ignore COMMENT
-%import common.WS
-%ignore WS
-%import common.NEWLINE
+conditional: if_branch elseif_branch* else_branch? "ENDIF"
+
+
+statement: declaration NEWLINE
+     | assignment NEWLINE
+     | constant NEWLINE
+     | "OUTPUT" expr NEWLINE -> output
+     | "INPUT" NAME NEWLINE  -> input
+     | expr NEWLINE
+     | conditional NEWLINE          -> conditional
