@@ -56,7 +56,7 @@ conditional: if_branch elseif_branch* else_branch? "ENDIF"
 
 while_loop: "WHILE" expr "DO" NEWLINE statement+ "ENDWHILE"
 repeat_until: "REPEAT" NEWLINE statement+ "UNTIL" expr
-// for_loop: "FOR" NAME "<-" expr "TO" expr NEWLINE statement+ "ENDFOR"
+for_loop: "FOR" NAME "<-" expr "TO" expr NEWLINE statement+ "ENDFOR"
 
 statement: declaration NEWLINE
      | assignment NEWLINE
@@ -67,3 +67,4 @@ statement: declaration NEWLINE
      | conditional NEWLINE   -> conditional
      | while_loop NEWLINE    -> while_loop
      | repeat_until NEWLINE  -> repeat_until
+     | for_loop NEWLINE      -> for_loop

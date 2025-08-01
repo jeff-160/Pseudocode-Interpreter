@@ -91,6 +91,7 @@ class Interpreter(Interpreter):
     def assignment(self, tree):
         name, value = tree.children[0], self.visit(tree.children[1])
 
+        assert name in self.vars, f'Variable "{name}" is not declared yet!'
         assert self.vars[name].mutable, f'Cannot assign to constant "{name}"!'
         assert type(value) == self.vars[name].type.bind, "Type mismatch!"
         
@@ -117,10 +118,8 @@ class Interpreter(Interpreter):
                     continue
             
             for stmt in branch.children[1:]:
-                if self.check_newline(stmt):
-                    continue
-
-                self.visit(stmt)
+                if not self.check_newline(stmt):
+                    self.visit(stmt)
             return
         
     # loops
@@ -129,9 +128,8 @@ class Interpreter(Interpreter):
 
         while self.visit(block[0]):
             for stmt in block[1:]:
-                if self.check_newline(stmt):
-                    continue
-                self.visit(stmt)
+                if not self.check_newline(stmt):
+                    self.visit(stmt)
 
     def repeat_until(self, tree):
         block = [line for line in tree.children[0].children if not self.check_newline(line)]
@@ -143,3 +141,18 @@ class Interpreter(Interpreter):
                 self.visit(stmt)
                 
             condition = not self.visit(block[-1])
+
+    def for_loop(self, tree):
+        block = tree.children[0].children
+
+        iterator, start, end = block[0], self.visit(block[1]), self.visit(block[2])
+        
+        self.vars[iterator] = Variable(self.types['INTEGER'], start, True)
+
+        for i in range(start, end + 1):
+            for stmt in block[3:]:
+                if not self.check_newline(stmt):
+                    self.visit(stmt)
+            
+            if i < end:
+                self.vars[iterator].value += 1
