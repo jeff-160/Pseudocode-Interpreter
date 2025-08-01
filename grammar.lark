@@ -6,10 +6,9 @@
 %ignore WS
 %import common.NEWLINE
 
-
 start: "BEGIN" statement+ "END"
 
-TYPE: "INTEGER" | "REAL" | "STRING" | "BOOLEAN" | "DATE"
+TYPE.2: "INTEGER" | "REAL" | "STRING" | "BOOLEAN" | "DATE"
 BOOLEAN.2: "TRUE" | "FALSE"
 
 assignment: NAME "<-" expr
@@ -51,6 +50,7 @@ COMMENT: /\/\/[^\n]*/
        | NAME arg_list -> call_function
        | factor "[" expr "]" -> get_index
        | "LENGTH" "(" expr ")"  -> length
+       | TYPE "(" expr ")" -> type_cast
 
 if_branch: "IF" expr "THEN" NEWLINE statement+
 elseif_branch: "ELSEIF" expr "THEN" NEWLINE statement+

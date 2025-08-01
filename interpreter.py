@@ -225,7 +225,7 @@ class Interpreter(Interpreter):
         try:
             func = self.scope.get(name)
         except:
-            raise Exception(f'Procedure "{name}" is not defined!')
+            raise Exception(f'Function "{name}" is not defined!')
 
         self.set_args([*func.params.items()], tree.children[1].children)
 
@@ -255,3 +255,11 @@ class Interpreter(Interpreter):
         assert isinstance(value, str), f'Cannot apply LENGTH() to non-string!'
 
         return len(value)
+    
+    def type_cast(self, tree):
+        cast, value = self.types[tree.children[0]].bind, self.visit(tree.children[1])
+
+        try:
+            return cast(value)
+        except:
+            raise Exception("Invalid conversion")
