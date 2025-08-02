@@ -115,7 +115,7 @@ class Interpreter(Interpreter):
             l, u, type = *map(self.visit, type.children[:2]), type.children[2]
             
             assert isinstance(l, int) and isinstance(u, int), "Array indices must be integers"
-            assert u > l, "Invalid array bounds "
+            assert u >= l, "Invalid array bounds "
             assert l == 1, "Array must be 1-indexed"
 
             self.scope.define(str(name), Variable(self.types["ARRAY"], [self.types[type].default] * u, True, type))
