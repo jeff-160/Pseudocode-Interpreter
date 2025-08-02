@@ -1,20 +1,21 @@
 ## Introduction
 
-A toy interpreted language based on the H2 Computing pseudocode guide.  
+A toy interpreted language based on the H2 computing pseudocode guide.  
   
-This is meant as a tool to help students practice and better familiarise themselves with the syntax rules of pseudocode.
+This was created due to the lack of existing interpreters that follow the H2 computing pseudocode standard, and as such, is meant as a tool to help students practice and better familiarise themselves with the syntax rules of pseudocode.  
 
 ---
 
 ## Features
 
 - [x] comments  
-- [x] primitive types (INTEGER, REAL, BOOLEAN, STRING)  
+- [x] i/o    
+- [x] primitive types (`INTEGER`, `REAL`, `BOOLEAN`, `STRING`)  
 - [x] type casting  
 - [x] variables, constants  
-- [x] i/o    
-- [x] flow control (IF, CASE, FOR, WHILE, REPEAT UNTIL)  
-- [x] subroutines (PROCEDURE, FUNCTION)
+- [x] scoping
+- [x] flow control (`IF`, `CASE`, `FOR`, `WHILE`, `REPEAT UNTIL`)  
+- [x] subroutines (`PROCEDURE`, `FUNCTION`)
 - [x] 1d-arrays
 - [ ] 2d-arrays
 
@@ -25,3 +26,16 @@ This is meant as a tool to help students practice and better familiarise themsel
 ```bash
 pip install lark
 ```
+
+--- 
+
+## Documentation
+
+Refer to the [pseudocode guide](???) for the specific syntax rules.  
+
+--- 
+
+## Notes
+
+- The `CHAR` data type is not supported due to its similarity with the `STRING` data type
+- As of now, passing an `ARRAY` into subroutines is currently not supported
