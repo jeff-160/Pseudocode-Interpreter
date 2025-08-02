@@ -8,6 +8,9 @@ class Param:
     def __init__(self, type, sub_type=None):
         self.type, self.sub_type = type, sub_type
 
+def format_error(file, line_no, error, line):
+    return f'{file}:{line_no}: {error}\n\t{line}'
+
 class Interpreter(Interpreter):
     def __init__(self, file, code, no_newlines):
         self.file, self.code = file, code
@@ -53,7 +56,7 @@ class Interpreter(Interpreter):
             except ReturnCall:
                 raise
             except Exception as e:
-                exit(f'{self.file}:{tree.meta.line}: {e}\n\t{self.code.split("\n")[tree.meta.line - 1]}')
+                exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
         return wrapper
 
     # data types
@@ -138,7 +141,7 @@ class Interpreter(Interpreter):
     def declaration(self, tree):
         name, type = tree.children
 
-        if getattr(type, "data", None):
+        if hasattr(type, "data"):
             l, u, type = *map(self.visit, type.children[:2]), type.children[2]
             
             assert isinstance(l, int) and isinstance(u, int), self.get_error("Array indices must be integers", tree)
