@@ -27,13 +27,15 @@ class Interpreter(Interpreter):
     def check_newline(self, stmt):
         return isinstance(stmt, Token) and stmt.type == "NEWLINE"
     
-    def get_type(self, type):
-        if type in [Procedure, Function]:
-            return type.__name__
+    def get_type(self, value):
+        raw_type = type(value)
+
+        if raw_type in [Procedure, Function]:
+            return raw_type.__name__
 
         for i, _ in self.types.items():
-            if type == self.types[i].bind:
-                return i
+            if raw_type == self.types[i].bind:
+                return i + (f"<{self.get_type(value[0])}>" if i == "ARRAY" else "")
             
     def check_index(self, collection, index):
         assert isinstance(index, int), "Index must be an integer"
@@ -112,7 +114,7 @@ class Interpreter(Interpreter):
             assert u > l, "Invalid array bounds "
             assert l == 1, "Array must be 1-indexed"
 
-            self.scope.define(str(name), Variable(self.types["ARRAY"], [self.types[type].default] * u, True))
+            self.scope.define(str(name), Variable(self.types["ARRAY"], [self.types[type].default] * u, True, type))
         else:
             self.scope.define(str(name), Variable(self.types[type], self.types[type].default, True))
 
@@ -129,8 +131,8 @@ class Interpreter(Interpreter):
 
         var = self.scope.get(name)
     
-        assert isinstance(var, list), f'Cannot apply index assignment to "{self.get_type(type(var))}"'
-        assert type(value) == type(var[0]), f'Assignment type mismatch, expected "{self.get_type(type(var[0]))}"'
+        assert isinstance(var, list), f'Cannot apply index assignment to "{self.get_type(var)}"'
+        assert type(value) == type(var[0]), f'Assignment type mismatch, expected "{self.get_type(var[0])}"'
         self.check_index(var, index)
 
         self.scope.assign_index(name, index - 1, value)
@@ -139,7 +141,7 @@ class Interpreter(Interpreter):
     def get_index(self, tree):
         value, index = map(self.visit, tree.children)
 
-        assert type(value) in [str, list], f'Cannot apply indexing to "{self.get_type(type(value))}"'
+        assert type(value) in [str, list], f'Cannot apply indexing to "{self.get_type(value)}"'
         self.check_index(value, index)
 
         return value[index - 1]
@@ -235,7 +237,7 @@ class Interpreter(Interpreter):
         for i in range(len(args)):
             arg = self.visit(args[i])
 
-            assert type(arg) == params[i][1].bind, f'Expected "{params[i][1].name}" argument type, got "{self.get_type(type(arg))}"'
+            assert type(arg) == params[i][1].bind, f'Expected "{params[i][1].name}" argument type, got "{self.get_type(arg)}"'
 
             self.scope.define(params[i][0], Variable(params[i][1], arg, True))
 
@@ -246,7 +248,11 @@ class Interpreter(Interpreter):
         if isinstance(param_tree, Tree) and param_tree.data == "param_list":
             for param in param_tree.children:
                 name, type = param.children
-                params[str(name)] = self.types[type]
+
+                if getattr(type, "data", None) == "arg_param":
+                    print(type.children[0])
+                else:
+                    params[str(name)] = self.types[type]
             offset += 1
 
         return params, offset
@@ -302,7 +308,7 @@ class Interpreter(Interpreter):
                 if not self.check_newline(line):
                     self.visit(line)
         except ReturnCall as rc:
-            assert type(rc.value) == func.return_type.bind, f'Expected "{func.return_type.name}" RETURN type, got "{self.get_type(type(rc.value))}"'
+            assert type(rc.value) == func.return_type.bind, f'Expected "{func.return_type.name}" RETURN type, got "{self.get_type(rc.value)}"'
 
             return rc.value
             
@@ -320,7 +326,7 @@ class Interpreter(Interpreter):
     def length(self, tree):
         value = self.visit(tree.children[0])
         
-        assert type(value) in [str, list], f'Cannot apply LENGTH() to "{self.get_type(type(value))}"'
+        assert type(value) in [str, list], f'Cannot apply LENGTH() to "{self.get_type(value)}"'
 
         return len(value)
     
@@ -330,4 +336,4 @@ class Interpreter(Interpreter):
         try:
             return cast.bind(value)
         except:
-            raise Exception(f'Cannot cast "{self.get_type(type(value))}" to "{cast.name}"')
+            raise Exception(f'Cannot cast "{self.get_type(value)}" to "{cast.name}"')
