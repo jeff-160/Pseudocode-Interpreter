@@ -73,14 +73,16 @@ repeat_until: "REPEAT" NEWLINE statement+ "UNTIL" expr
 step: "STEP" expr
 for_loop: "FOR" NAME "<-" expr "TO" expr step? NEWLINE statement+ "ENDFOR"
 
-param: NAME ":" TYPE
-param_list: "(" param ("," param)* ")"
+arg_param: "ARRAY" "OF" TYPE
+?param_type: TYPE | arg_param
+param: NAME ":" param_type
+param_list: param ("," param)*
 
 arg_list: "(" (expr ("," expr)*)? ")"
 opt_arg_list: "(" expr ("," expr)* ")"
 
-procedure: "PROCEDURE" NAME param_list? NEWLINE statement+ "ENDPROCEDURE"
-function: "FUNCTION" NAME param_list? "RETURNS" TYPE NEWLINE statement+ "ENDFUNCTION"
+procedure: "PROCEDURE" NAME ("(" param_list ")")? NEWLINE statement+ "ENDPROCEDURE"
+function: "FUNCTION" NAME "(" param_list? ")" "RETURNS" param_type  NEWLINE statement+ "ENDFUNCTION"
 
 statement: declaration NEWLINE
      | index_assignment NEWLINE
