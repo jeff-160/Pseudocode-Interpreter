@@ -48,11 +48,10 @@ class Interpreter(Interpreter):
         return literal_eval(tree.children[0])
     
     def boolean(self, tree):
-        print('fuck')
         return tree.children[0] == "TRUE"
     
     def char(self, tree):
-        return PChar(tree.children[0][1:-1])
+        return PChar(literal_eval(tree.children[0]))
 
     # arithmetic operators
     def neg(self, tree):
