@@ -13,7 +13,7 @@ class PChar:
             self._char = value
         
         else:
-            raise TypeError(f'Cannot convert "{value}" to "CHAR"')
+            raise Exception(f'Cannot convert "{value}" to "CHAR"')
     
     def __str__(self):
         return self._char

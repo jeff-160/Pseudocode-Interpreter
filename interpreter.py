@@ -4,6 +4,10 @@ from pchar import *
 from scope import *
 from subroutine import *
 
+class Param:
+    def __init__(self, type, sub_type=None):
+        self.type, self.sub_type = type, sub_type
+
 class Interpreter(Interpreter):
     def __init__(self, no_newlines):
         self.no_newlines = no_newlines
@@ -237,7 +241,11 @@ class Interpreter(Interpreter):
         for i in range(len(args)):
             arg = self.visit(args[i])
 
-            param_type = type_repr(params[i][1][0].name, getattr(params[i][1][1], "name", None))
+            # pass arrays by value
+            if isinstance(arg, list):
+                arg = arg[:]
+
+            param_type = type_repr(params[i][1].type.name, getattr(params[i][1].sub_type, "name", None))
 
             assert self.get_type(arg) == param_type, f'Expected "{param_type}" argument type, got "{self.get_type(arg)}"'
 
@@ -251,10 +259,12 @@ class Interpreter(Interpreter):
             for param in param_tree.children:
                 name, type = param.children
 
+                assert name not in params, f'Duplicate parameter name "{name}"'
+
                 if getattr(type, "data", None) == "arg_param":
-                    params[str(name)] = (self.types["ARRAY"], self.types[type.children[0]])
+                    params[str(name)] = Param(self.types["ARRAY"], self.types[type.children[0]])
                 else:
-                    params[str(name)] = (self.types[type], None)
+                    params[str(name)] = Param(self.types[type])
             offset += 1
 
         return params, offset
@@ -291,7 +301,12 @@ class Interpreter(Interpreter):
 
         params, body = self.get_params(block[1])
 
-        self.scope.define(str(block[0]), Function(self.types[block[body]], params, block[body + 1:]))
+        if getattr(block[body], "data", None) == "arg_param":
+            ret_type = Param(self.types["ARRAY"], self.types[block[body].children[0]])
+        else:
+            ret_type = Param(self.types[block[body]])
+
+        self.scope.define(str(block[0]), Function(ret_type, params, block[body + 1:]))
 
     def call_function(self, tree):
         self.call_stack.append("function")
@@ -303,8 +318,7 @@ class Interpreter(Interpreter):
         except:
             raise Exception(f'Function "{name}" is not defined')
         
-        if isinstance(func, Procedure):
-            raise Exception(f'Cannot directly invoke Procedure "{name}", use "CALL"')
+        assert isinstance(func, Function), f'Cannot directly invoke Procedure "{name}", use "CALL"'
 
         self.set_args([*func.params.items()], tree.children[1].children)
 
@@ -313,8 +327,12 @@ class Interpreter(Interpreter):
                 if not self.check_newline(line):
                     self.visit(line)
         except ReturnCall as rc:
-            assert type(rc.value) == func.return_type.bind, f'Expected "{func.return_type.name}" RETURN type, got "{self.get_type(rc.value)}"'
+            call_type = self.get_type(rc.value) 
+            ret_type = type_repr(func.return_type.type.name, getattr(func.return_type.sub_type, "name", None))
 
+            assert call_type == ret_type, f'Expected "{ret_type}" RETURN type, got "{call_type}"'
+
+            self.scope.remove_scope()
             return rc.value
             
         self.scope.remove_scope()
