@@ -9,7 +9,8 @@ class Param:
         self.type, self.sub_type = type, sub_type
 
 class Interpreter(Interpreter):
-    def __init__(self, no_newlines):
+    def __init__(self, file, code, no_newlines):
+        self.file, self.code = file, code
         self.no_newlines = no_newlines
 
         self.types = {
@@ -45,6 +46,16 @@ class Interpreter(Interpreter):
         assert isinstance(index, int), "Index must be an integer"
         assert index in range(1, len(collection) + 1), f'Index "{index}" out of bounds'
 
+    def catch_error(func):
+        def wrapper(self, tree):
+            try:
+                return func(self, tree)
+            except ReturnCall:
+                raise
+            except Exception as e:
+                exit(f'{self.file}:{tree.meta.line}: {e}\n\t{self.code.split("\n")[tree.meta.line - 1]}')
+        return wrapper
+
     # data types
     def number(self, tree):
         n = tree.children[0]
@@ -60,76 +71,95 @@ class Interpreter(Interpreter):
         return PChar(literal_eval(tree.children[0]))
 
     # arithmetic operators
+    @catch_error
     def neg(self, tree):
         return -self.visit(tree.children[0])
 
+    @catch_error
     def add(self, tree):
         return self.visit(tree.children[0]) + self.visit(tree.children[1])
 
+    @catch_error
     def sub(self, tree):
         return self.visit(tree.children[0]) - self.visit(tree.children[1])
 
+    @catch_error
     def mul(self, tree):
         return self.visit(tree.children[0]) * self.visit(tree.children[1])
 
+    @catch_error
     def div(self, tree):
         return self.visit(tree.children[0]) / self.visit(tree.children[1])
     
+    @catch_error
     def mod(self, tree):
         return self.visit(tree.children[0]) % self.visit(tree.children[1])
     
     # logical operators
+    @catch_error
     def and_op(self, tree):
         return self.visit(tree.children[0]) and self.visit(tree.children[1])
-    
+
+    @catch_error
     def or_op(self, tree):
         return self.visit(tree.children[0]) or self.visit(tree.children[1])
      
     # comparision operators
+    @catch_error
     def gt(self, tree):
         return self.visit(tree.children[0]) > self.visit(tree.children[1])
     
+    @catch_error
     def lt(self, tree):
         return self.visit(tree.children[0]) < self.visit(tree.children[1])
     
+    @catch_error
     def gte(self, tree):
         return self.visit(tree.children[0]) >= self.visit(tree.children[1])
     
+    @catch_error
     def lte(self, tree):
         return self.visit(tree.children[0]) <= self.visit(tree.children[1])
     
+    @catch_error
     def eq(self, tree):
         return self.visit(tree.children[0]) == self.visit(tree.children[1])
     
+    @catch_error
     def neq(self, tree):
         return self.visit(tree.children[0]) != self.visit(tree.children[1])
     
     # variables
+    @catch_error
     def var(self, tree):
         return self.scope.get(tree.children[0])
 
+    @catch_error
     def declaration(self, tree):
         name, type = tree.children
 
         if getattr(type, "data", None):
             l, u, type = *map(self.visit, type.children[:2]), type.children[2]
             
-            assert isinstance(l, int) and isinstance(u, int), "Array indices must be integers"
-            assert u >= l, "Invalid array bounds "
+            assert isinstance(l, int) and isinstance(u, int), self.get_error("Array indices must be integers", tree)
+            assert u >= l, "Invalid array bounds"
             assert l == 1, "Array must be 1-indexed"
 
             self.scope.define(str(name), Variable(self.types["ARRAY"], [self.types[type].default] * u, True, type))
         else:
             self.scope.define(str(name), Variable(self.types[type], self.types[type].default, True))
 
+    @catch_error
     def constant(self, tree):
         name, value = tree.children[0], self.visit(tree.children[1])
         self.scope.define(str(name), Variable(None, value, False))
 
+    @catch_error
     def assignment(self, tree):
         name, value = tree.children[0], self.visit(tree.children[1])
         self.scope.assign(name, value)
 
+    @catch_error
     def index_assignment(self, tree):
         name, index, value = tree.children[0], *map(self.visit, tree.children[1:])
 
@@ -142,6 +172,7 @@ class Interpreter(Interpreter):
         self.scope.assign_index(name, index - 1, value)
 
     # indexing
+    @catch_error
     def get_index(self, tree):
         value, index = map(self.visit, tree.children)
 
@@ -151,14 +182,17 @@ class Interpreter(Interpreter):
         return value[index - 1]
 
     # i/o
+    @catch_error
     def output(self, tree):
         out = [self.visit(child) for child in tree.children if not self.check_newline(child)]
         print(" ".join(map(str, out)), end=("" if self.no_newlines else "\n"))
 
+    @catch_error
     def input(self, tree):
         self.scope.define(tree.children[0], Variable(self.types["STRING"], input(), True))
 
     # conditionals
+    @catch_error
     def conditional(self, tree):
         for branch in tree.children[0].children:
             if "if_branch" in branch.data:
@@ -169,7 +203,8 @@ class Interpreter(Interpreter):
                 if not self.check_newline(stmt):
                     self.visit(stmt)
             return
-        
+
+    @catch_error
     def switch(self, tree):
         block = tree.children[0].children
 
@@ -190,6 +225,7 @@ class Interpreter(Interpreter):
                 return
      
     # loops
+    @catch_error
     def while_loop(self, tree):
         block = tree.children[0].children
 
@@ -198,6 +234,7 @@ class Interpreter(Interpreter):
                 if not self.check_newline(stmt):
                     self.visit(stmt)
 
+    @catch_error
     def repeat_until(self, tree):
         block = [line for line in tree.children[0].children if not self.check_newline(line)]
 
@@ -209,6 +246,7 @@ class Interpreter(Interpreter):
                 
             condition = not self.visit(block[-1])
 
+    @catch_error
     def for_loop(self, tree):
         block = tree.children[0].children
 
@@ -269,6 +307,7 @@ class Interpreter(Interpreter):
 
         return params, offset
 
+    @catch_error
     def procedure(self, tree):
         block = tree.children[0].children
         
@@ -276,6 +315,7 @@ class Interpreter(Interpreter):
 
         self.scope.define(block[0], Procedure(params, block[body:]))
 
+    @catch_error
     def call_procedure(self, tree):
         self.call_stack.append("procedure")
 
@@ -298,6 +338,7 @@ class Interpreter(Interpreter):
         self.scope.remove_scope()
         self.call_stack.pop()
 
+    @catch_error
     def function(self, tree):
         block = tree.children[0].children
 
@@ -310,6 +351,7 @@ class Interpreter(Interpreter):
 
         self.scope.define(str(block[0]), Function(ret_type, params, block[body + 1:]))
 
+    @catch_error
     def call_function(self, tree):
         self.call_stack.append("function")
 
@@ -342,12 +384,14 @@ class Interpreter(Interpreter):
 
         return func.return_type.type.default
     
+    @catch_error
     def return_stmt(self, tree):
         assert len(self.call_stack) and self.call_stack[-1] == "function", "RETURN statement ouside Function block"
 
         raise ReturnCall(self.visit(tree.children[0]))
     
     # builtin functions
+    @catch_error
     def length(self, tree):
         value = self.visit(tree.children[0])
         
@@ -355,6 +399,7 @@ class Interpreter(Interpreter):
 
         return len(value)
     
+    @catch_error
     def type_cast(self, tree):
         cast, value = self.types[tree.children[0]], self.visit(tree.children[1])
         

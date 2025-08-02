@@ -21,7 +21,7 @@ def get_parser():
     with open("syntax.lark", "r") as f:
         grammar = f.read().strip()
 
-    return Lark(grammar, parser='lalr')
+    return Lark(grammar, parser='lalr', propagate_positions=True)
 
 def main():
     args = arg_parser.parse_args()
@@ -31,11 +31,9 @@ def main():
         with open(file_path, "r") as f:
             program = "\n".join([line.strip() for line in f.read().split("\n")])
         
-        Interpreter(args.no_newlines).visit(get_parser().parse(program))
+        Interpreter(file_path, program, args.no_newlines).visit(get_parser().parse(program))
     except FileNotFoundError:
         print(f'Could not locate file: "{file_path}"')
-    # except Exception as e:
-    #     print(e)
 
 if __name__ == "__main__":
     main()
