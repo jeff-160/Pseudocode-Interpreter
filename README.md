@@ -10,8 +10,9 @@ This was created due to the lack of existing interpreters that follow the H2 com
 
 - [x] comments  
 - [x] i/o    
-- [x] primitive types (`INTEGER`, `REAL`, `BOOLEAN`, `STRING`)  
+- [x] primitive types (`INTEGER`, `REAL`, `BOOLEAN`, `STRING`, `CHAR`)  
 - [x] type casting  
+- [x] operators (arithemtic, logical, comparative)
 - [x] variables, constants  
 - [x] scoping
 - [x] flow control (`IF`, `CASE`, `FOR`, `WHILE`, `REPEAT UNTIL`)  
@@ -21,21 +22,34 @@ This was created due to the lack of existing interpreters that follow the H2 com
 
 ---
 
-## Requirements
+## Setup
 
+### Full Windows support
+```bash
+git clone jeff-160/Pseudocode-Interpreter
+cd Pseudocode-Interpreter
+setup.bat
+
+pseudo <filename>
+```
+
+### Run with Python
 ```bash
 pip install lark
+
+python main.py <filename>
 ```
 
 --- 
 
 ## Documentation
 
-Refer to the [pseudocode guide](???) for the specific syntax rules.  
+Refer to the [pseudocode guide](documentation.pdf) for the specific syntax rules.  
 
 --- 
 
 ## Notes
 
-- The `CHAR` data type is not supported due to its similarity with the `STRING` data type
-- As of now, passing an `ARRAY` into subroutines is currently not supported
+- `CHAR` and `STRING` use different quotes: `''` and `""` respectively
+- Arguments are passed into subroutines by value, not reference
+- 2D arrays are currently not supported
