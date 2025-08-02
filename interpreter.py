@@ -286,6 +286,8 @@ class Interpreter(Interpreter):
         except:
             raise Exception(f'Procedure "{name}" is not defined')
         
+        assert not isinstance(proc, Function), f'Cannot "CALL" Function, directly invoke instead'
+        
         args = tree.children[1].children if len([i for i in tree.children if not self.check_newline(i)]) > 1 else []
         self.set_args([*proc.params.items()], args)
 
@@ -338,7 +340,7 @@ class Interpreter(Interpreter):
         self.scope.remove_scope()
         self.call_stack.pop()
 
-        return func.return_type.default
+        return func.return_type.type.default
     
     def return_stmt(self, tree):
         assert len(self.call_stack) and self.call_stack[-1] == "function", "RETURN statement ouside Function block"
