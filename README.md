@@ -17,8 +17,8 @@ This was created due to the lack of existing interpreters that follow the H2 com
 - [x] scoping
 - [x] flow control (`IF`, `CASE`, `FOR`, `WHILE`, `REPEAT UNTIL`)  
 - [x] subroutines (`PROCEDURE`, `FUNCTION`)
-- [x] 1d-arrays
-- [ ] 2d-arrays
+- [x] 1D arrays
+- [ ] 2D arrays
 
 ---
 
