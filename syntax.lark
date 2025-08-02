@@ -43,6 +43,7 @@ COMMENT: /\/\/[^\n]*/
 
 ?term: term "*" factor -> mul
      | term "/" factor -> div
+     | term "%" factor -> mod
      | factor
 
 ?factor: "-" factor    -> neg

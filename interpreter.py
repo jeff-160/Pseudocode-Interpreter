@@ -1,4 +1,5 @@
 from lark.visitors import Token, Tree, Interpreter
+from ast import literal_eval
 from scope import *
 from subroutine import *
 
@@ -42,9 +43,7 @@ class Interpreter(Interpreter):
         return float(n) if '.' in n else int(n)
     
     def string(self, tree):
-        import ast
-
-        return ast.literal_eval(tree.children[0])
+        return literal_eval(tree.children[0])
     
     def boolean(self, tree):
         return tree.children[0] == "TRUE"
@@ -64,6 +63,9 @@ class Interpreter(Interpreter):
 
     def div(self, tree):
         return self.visit(tree.children[0]) / self.visit(tree.children[1])
+    
+    def mod(self, tree):
+        return self.visit(tree.children[0]) % self.visit(tree.children[1])
     
     # logical operators
     def and_op(self, tree):
