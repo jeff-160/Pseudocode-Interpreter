@@ -7,8 +7,10 @@
 %import common.NEWLINE
 
 start: "BEGIN" statement+ "END"
+COMMENT: /\/\/[^\n]*/
 
-TYPE.2: "INTEGER" | "REAL" | "STRING" | "BOOLEAN"
+TYPE.2: "INTEGER" | "REAL" | "STRING" | "BOOLEAN" | "CHAR"
+CHAR.2: /'(\\[0-9]{1,3}|\\x[0-9A-Fa-f]{2}|\\.|[^\\'])'/
 BOOLEAN.2: "TRUE" | "FALSE"
 
 ?type: TYPE
@@ -18,8 +20,6 @@ assignment: NAME "<-" expr
 index_assignment: NAME "[" expr "]" "<-" expr
 declaration: "DECLARE" NAME ":" type
 constant: "CONSTANT" NAME "=" expr
-
-COMMENT: /\/\/[^\n]*/
 
 ?expr: or_expr
 
@@ -49,6 +49,7 @@ COMMENT: /\/\/[^\n]*/
 ?factor: "-" factor    -> neg
        | NUMBER        -> number
        | STRING        -> string
+       | CHAR          -> char
        | BOOLEAN       -> boolean
        | NAME          -> var
        | "(" expr ")"

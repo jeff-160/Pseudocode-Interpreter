@@ -1,5 +1,6 @@
 from lark.visitors import Token, Tree, Interpreter
 from ast import literal_eval
+from pchar import *
 from scope import *
 from subroutine import *
 
@@ -15,6 +16,7 @@ class Interpreter(Interpreter):
                 Type("REAL", float, 0.0),
                 Type("STRING", str, ""),
                 Type("BOOLEAN", bool, False),
+                Type("CHAR", PChar, PChar("\x00")),
                 Type("ARRAY", list, [])
             ]
         }
@@ -46,7 +48,11 @@ class Interpreter(Interpreter):
         return literal_eval(tree.children[0])
     
     def boolean(self, tree):
+        print('fuck')
         return tree.children[0] == "TRUE"
+    
+    def char(self, tree):
+        return PChar(tree.children[0][1:-1])
 
     # arithmetic operators
     def neg(self, tree):
@@ -321,7 +327,7 @@ class Interpreter(Interpreter):
     
     def type_cast(self, tree):
         cast, value = self.types[tree.children[0]], self.visit(tree.children[1])
-
+        
         try:
             return cast.bind(value)
         except:
