@@ -35,7 +35,7 @@ class Interpreter(Interpreter):
 
         for i, _ in self.types.items():
             if raw_type == self.types[i].bind:
-                return i + (f"<{self.get_type(value[0])}>" if i == "ARRAY" else "")
+                return type_repr(i, self.get_type(value[0]) if i == "ARRAY" else None)
             
     def check_index(self, collection, index):
         assert isinstance(index, int), "Index must be an integer"
@@ -237,9 +237,11 @@ class Interpreter(Interpreter):
         for i in range(len(args)):
             arg = self.visit(args[i])
 
-            assert type(arg) == params[i][1].bind, f'Expected "{params[i][1].name}" argument type, got "{self.get_type(arg)}"'
+            param_type = type_repr(params[i][1][0].name, getattr(params[i][1][1], "name", None))
 
-            self.scope.define(params[i][0], Variable(params[i][1], arg, True))
+            assert self.get_type(arg) == param_type, f'Expected "{param_type}" argument type, got "{self.get_type(arg)}"'
+
+            self.scope.define(params[i][0], Variable(param_type, arg, True))
 
     def get_params(self, param_tree):
         offset = 1
@@ -250,9 +252,9 @@ class Interpreter(Interpreter):
                 name, type = param.children
 
                 if getattr(type, "data", None) == "arg_param":
-                    print(type.children[0])
+                    params[str(name)] = (self.types["ARRAY"], self.types[type.children[0]])
                 else:
-                    params[str(name)] = self.types[type]
+                    params[str(name)] = (self.types[type], None)
             offset += 1
 
         return params, offset
@@ -300,6 +302,9 @@ class Interpreter(Interpreter):
             func = self.scope.get(name)
         except:
             raise Exception(f'Function "{name}" is not defined')
+        
+        if isinstance(func, Procedure):
+            raise Exception(f'Cannot directly invoke Procedure "{name}", use "CALL"')
 
         self.set_args([*func.params.items()], tree.children[1].children)
 

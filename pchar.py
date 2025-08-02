@@ -18,6 +18,9 @@ class PChar:
     def __str__(self):
         return self._char
     
+    def __repr__(self):
+        return repr(self._char)
+    
     def __int__(self):
         return ord(self._char)
     

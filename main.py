@@ -34,8 +34,8 @@ def main():
         Interpreter(args.no_newlines).visit(get_parser().parse(program))
     except FileNotFoundError:
         print(f'Could not locate file: "{file_path}"')
-    except Exception as e:
-        print(e)
+    # except Exception as e:
+    #     print(e)
 
 if __name__ == "__main__":
     main()
