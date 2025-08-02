@@ -18,9 +18,14 @@ class PChar:
     def __str__(self):
         return self._char
     
+    def __int__(self):
+        return ord(self._char)
+    
     def __eq__(self, other):
         if isinstance(other, PChar):
             return self._char == other._char
+        
         if isinstance(other, str) and len(other) == 1:
             return self._char == other
+        
         return False
