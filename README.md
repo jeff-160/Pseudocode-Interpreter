@@ -52,4 +52,3 @@ Refer to the [pseudocode guide](documentation.pdf) for the specific syntax rules
 
 - `CHAR` and `STRING` use different quotes: `''` and `""` respectively
 - Arguments are passed into subroutines by value, not reference
-- 2D arrays are currently not supported
