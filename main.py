@@ -31,7 +31,8 @@ def main():
         with open(file_path, "r") as f:
             program = "\n".join([line.strip() for line in f.read().split("\n")])
         
-        Interpreter(file_path, program, args.no_newlines).visit(get_parser().parse(program))
+        ast = get_parser().parse(program)
+        Interpreter(file_path, program, args.no_newlines).visit(ast)
     except FileNotFoundError:
         print(f'Could not locate file: "{file_path}"')
     except Exception as e:

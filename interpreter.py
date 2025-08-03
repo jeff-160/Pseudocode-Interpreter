@@ -55,6 +55,9 @@ class Interpreter(Interpreter):
                 return func(self, tree)
             except ReturnCall:
                 raise
+            except TypeError:
+                a, b = map(self.visit, tree.children)
+                raise Exception(f'Operation not supported between "{self.get_type(a)}" and "{self.get_type(b)}"')
             except Exception as e:
                 exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
         return wrapper
