@@ -1,9 +1,4 @@
-def type_repr(main_type, sub_type=None):
-    return main_type + (f"<{sub_type}>" if sub_type else "")
-
-class Type:
-    def __init__(self, name, bind, default):
-        self.name, self.bind, self.default = name, bind, default
+from ptypes import *
 
 class Variable:
     def __init__(self, type, value, mutable, subtype=None):
@@ -28,10 +23,10 @@ class Scope:
     def assign(self, name, value):
         for scope in self.stack[::-1]:
             if name in scope:
-                assert scope[name].type.name != "ARRAY", f'Cannot assign to "{type_repr(scope[name].type.name, scope[name].subtype)}"'
+                assert scope[name].type.name != "ARRAY", f'Cannot assign to "{get_type(scope[name].value)}"'
                 assert isinstance(scope[name], Variable), f'Cannot assign to "{str(scope[name])}"'
                 assert scope[name].mutable, f'Cannot assign to constant "{name}"'
-                assert type(value) == scope[name].type.bind, f'Assignment type mismatch, expected "{type_repr(scope[name].type.name, scope[name].subtype)}"'
+                assert type(value) == scope[name].type.bind, f'Assignment type mismatch, expected "{get_type(scope[name].value)}", got "{get_type(value)}"'
                 
                 scope[name].value = value
                 return

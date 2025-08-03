@@ -2,11 +2,25 @@ from lark.visitors import Token, Tree, Interpreter
 from ast import literal_eval
 from pchar import *
 from scope import *
-from subroutine import *
 
 class Param:
     def __init__(self, type, sub_type=None):
         self.type, self.sub_type = type, sub_type
+
+    def get_type(self, t=None):
+        if t is None:
+            t = self
+
+        if isinstance(t, Type):
+            return t.name
+        
+        if isinstance(t, Param):
+            result = t.type.name
+            if t.sub_type:
+                result += f'<{self.get_type(t.sub_type)}>'
+            return result
+
+        return str(t)
 
 def format_error(file, line_no, error, line):
     return f'{file}:{line_no}: {error}\n\t{line}'
@@ -16,34 +30,11 @@ class Interpreter(Interpreter):
         self.file, self.code = file, code
         self.no_newlines = no_newlines
 
-        self.types = {
-            type.name: type
-
-            for type in [
-                Type("INTEGER", int, 0),
-                Type("REAL", float, 0.0),
-                Type("STRING", str, ""),
-                Type("BOOLEAN", bool, False),
-                Type("CHAR", PChar, PChar("\x00")),
-                Type("ARRAY", list, [])
-            ]
-        }
-
         self.scope = Scope()
         self.call_stack = []
 
     def check_newline(self, stmt):
         return isinstance(stmt, Token) and stmt.type == "NEWLINE"
-    
-    def get_type(self, value):
-        raw_type = type(value)
-
-        if raw_type in [Procedure, Function]:
-            return raw_type.__name__
-
-        for i, _ in self.types.items():
-            if raw_type == self.types[i].bind:
-                return type_repr(i, self.get_type(value[0]) if i == "ARRAY" else None)
             
     def check_indices(self, collection, indices):
         for i in range(len(indices)):
@@ -59,11 +50,11 @@ class Interpreter(Interpreter):
                 return func(self, tree)
             except ReturnCall:
                 raise
-            # except TypeError:
-            #     a, b = map(self.visit, tree.children)
-            #     raise Exception(f'Operation not supported between "{self.get_type(a)}" and "{self.get_type(b)}"')
-            # except Exception as e:
-            #     exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
+            except TypeError:
+                a, b = map(self.visit, tree.children)
+                raise Exception(f'Operation not supported between "{get_type(a)}" and "{get_type(b)}"')
+            except Exception as e:
+                exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
         return wrapper
 
     # data types
@@ -164,14 +155,14 @@ class Interpreter(Interpreter):
 
             
             if len(dimensions) > 1:
-                value = [[self.types[type].default] * dimensions[1][1] for _ in range(dimensions[0][1])]
+                value = [[TYPES[type].default] * dimensions[1][1] for _ in range(dimensions[0][1])]
             else:
-                value = [self.types[type].default] * dimensions[0][1]
+                value = [TYPES[type].default] * dimensions[0][1]
 
 
-            self.scope.define(str(name), Variable(self.types["ARRAY"], value, True, type))
+            self.scope.define(str(name), Variable(TYPES["ARRAY"], value, True, type))
         else:
-            self.scope.define(str(name), Variable(self.types[block], self.types[block].default, True))
+            self.scope.define(str(name), Variable(TYPES[block], TYPES[block].default, True))
 
     @catch_error
     def constant(self, tree):
@@ -189,12 +180,13 @@ class Interpreter(Interpreter):
 
         var = self.scope.get(name)
     
-        assert isinstance(var, list), f'Cannot apply index assignment to "{self.get_type(var)}"'
+        assert isinstance(var, list), f'Cannot apply index assignment to "{get_type(var)}"'
         
         if len(indices) == 1 and isinstance(var[0], list):
-            raise Exception(f'Cannot assign to "{self.get_type(var[0])}"')
-
-        assert type(value) == type(var[0][0] if len(indices) > 1 else var[0]), f'Assignment type mismatch, expected "{self.get_type(var[0])}"'
+            raise Exception(f'Cannot assign to "{get_type(var[0])}"')
+        
+        cmp = var[0][0] if len(indices) > 1 else var[0]
+        assert type(value) == type(cmp), f'Assignment type mismatch, expected "{get_type(cmp)}", got "{get_type(value)}"'
 
         self.check_indices(var, indices)
 
@@ -205,10 +197,10 @@ class Interpreter(Interpreter):
     def get_index(self, tree):
         value, indices = map(self.visit, tree.children)
 
-        assert type(value) in [str, list], f'Cannot apply indexing to "{self.get_type(value)}"'
+        assert type(value) in [str, list], f'Cannot apply indexing to "{get_type(value)}"'
         
         if len(indices) > 1 and not isinstance(value[0], list):
-            raise Exception(f'Cannot apply 2D indexing to "{self.get_type(value)}"')
+            raise Exception(f'Cannot apply 2D indexing to "{get_type(value)}"')
 
         self.check_indices(value, indices)
 
@@ -224,7 +216,7 @@ class Interpreter(Interpreter):
 
     @catch_error
     def input(self, tree):
-        self.scope.define(tree.children[0], Variable(self.types["STRING"], input(), True))
+        self.scope.define(tree.children[0], Variable(TYPES["STRING"], input(), True))
 
     # conditionals
     @catch_error
@@ -264,14 +256,20 @@ class Interpreter(Interpreter):
     def while_loop(self, tree):
         block = tree.children[0].children
 
+        self.scope.add_scope()
+
         while self.visit(block[0]):
             for stmt in block[1:]:
                 if not self.check_newline(stmt):
                     self.visit(stmt)
+        
+        self.scope.remove_scope()
 
     @catch_error
     def repeat_until(self, tree):
         block = [line for line in tree.children[0].children if not self.check_newline(line)]
+
+        self.scope.add_scope()
 
         condition = True
 
@@ -280,6 +278,8 @@ class Interpreter(Interpreter):
                 self.visit(stmt)
                 
             condition = not self.visit(block[-1])
+
+        self.scope.remove_scope()
 
     @catch_error
     def for_loop(self, tree):
@@ -294,7 +294,7 @@ class Interpreter(Interpreter):
 
         self.scope.add_scope()
         
-        self.scope.define(iterator, Variable(self.types['INTEGER'], start, True))
+        self.scope.define(iterator, Variable(TYPES['INTEGER'], start, True))
 
         for i in range(start, stop, step):
             self.scope.assign(iterator, i)
@@ -318,15 +318,10 @@ class Interpreter(Interpreter):
             if isinstance(arg, list):
                 arg = arg[:]
 
-            if isinstance(params[i][1].sub_type, Param):
-                sub_type = type_repr(params[i][1].sub_type.type.name, params[i][1].sub_type.sub_type.name)
-            else:
-                sub_type = getattr(params[i][1].sub_type, "name", None)
+            param_type = params[i][1].get_type()
+            assert get_type(arg) == param_type, f'Expected "{param_type}" argument type, got "{get_type(arg)}"'
 
-            param_type = type_repr(params[i][1].type.name, sub_type)
-            assert self.get_type(arg) == param_type, f'Expected "{param_type}" argument type, got "{self.get_type(arg)}"'
-
-            self.scope.define(params[i][0], Variable(self.types[params[i][1].type.name], arg, True))
+            self.scope.define(params[i][0], Variable(TYPES[params[i][1].type.name], arg, True))
 
     def get_params(self, param_tree):
         offset = 1
@@ -340,11 +335,11 @@ class Interpreter(Interpreter):
 
                 if getattr(type, "data", None) == "arg_param":
                     if getattr(type.children[0], "data", None) == "arg_param":
-                        params[str(name)] = Param(self.types["ARRAY"], Param(self.types["ARRAY"], self.types[type.children[0].children[0]]))
+                        params[str(name)] = Param(TYPES["ARRAY"], Param(TYPES["ARRAY"], TYPES[type.children[0].children[0]]))
                     else:
-                        params[str(name)] = Param(self.types["ARRAY"], self.types[type.children[0]])
+                        params[str(name)] = Param(TYPES["ARRAY"], TYPES[type.children[0]])
                 else:
-                    params[str(name)] = Param(self.types[type])
+                    params[str(name)] = Param(TYPES[type])
             offset += 1
 
         return params, offset
@@ -387,9 +382,9 @@ class Interpreter(Interpreter):
         params, body = self.get_params(block[1])
 
         if getattr(block[body], "data", None) == "arg_param":
-            ret_type = Param(self.types["ARRAY"], self.types[block[body].children[0]])
+            ret_type = Param(TYPES["ARRAY"], TYPES[block[body].children[0]])
         else:
-            ret_type = Param(self.types[block[body]])
+            ret_type = Param(TYPES[block[body]])
 
         self.scope.define(str(block[0]), Function(ret_type, params, block[body + 1:]))
 
@@ -413,8 +408,8 @@ class Interpreter(Interpreter):
                 if not self.check_newline(line):
                     self.visit(line)
         except ReturnCall as rc:
-            call_type = self.get_type(rc.value) 
-            ret_type = type_repr(func.return_type.type.name, getattr(func.return_type.sub_type, "name", None))
+            call_type = get_type(rc.value) 
+            ret_type = func.return_type.get_type()
 
             assert call_type == ret_type, f'Expected "{ret_type}" RETURN type, got "{call_type}"'
 
@@ -437,15 +432,15 @@ class Interpreter(Interpreter):
     def length(self, tree):
         value = self.visit(tree.children[0])
         
-        assert type(value) in [str, list], f'Cannot apply LENGTH() to "{self.get_type(value)}"'
+        assert type(value) in [str, list], f'Cannot apply LENGTH() to "{get_type(value)}"'
 
         return len(value)
     
     @catch_error
     def type_cast(self, tree):
-        cast, value = self.types[tree.children[0]], self.visit(tree.children[1])
+        cast, value = TYPES[tree.children[0]], self.visit(tree.children[1])
         
         try:
             return cast.bind(value)
         except:
-            raise Exception(f'Cannot cast "{self.get_type(value)}" to "{cast.name}"')
+            raise Exception(f'Cannot cast "{get_type(value)}" to "{cast.name}"')
