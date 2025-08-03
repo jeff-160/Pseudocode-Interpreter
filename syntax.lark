@@ -61,7 +61,7 @@ constant: "CONSTANT" NAME "=" expr
        | TYPE "(" expr ")" -> type_cast
 
 if_branch: "IF" expr "THEN" NEWLINE statement+
-elseif_branch: "ELSEIF" expr "THEN" NEWLINE statement+
+elseif_branch: "ELSE" "IF" expr "THEN" NEWLINE statement+
 else_branch: "ELSE" NEWLINE statement+
 conditional: if_branch elseif_branch* else_branch? "ENDIF"
 
