@@ -38,10 +38,15 @@ class Scope:
             
         raise Exception(f'Variable "{name}" is not declared')
     
-    def assign_index(self, name, index, value):
+    def assign_index(self, name, indices, value):
         for scope in self.stack[::-1]:
             if name in scope:
-                scope[name].value[index] = value
+                arr = scope[name].value
+
+                if len(indices) > 1:
+                    arr[indices[0]][indices[1]] = value
+                else:
+                    arr[indices[0]] = value
                 return
 
         raise Exception(f'Array "{name}" is not declared')

@@ -13,11 +13,13 @@ TYPE.2: "INTEGER" | "REAL" | "STRING" | "BOOLEAN" | "CHAR"
 CHAR.2: /'(\\[0-9]{1,3}|\\x[0-9A-Fa-f]{2}|\\.|[^\\'])'/
 BOOLEAN.2: "TRUE" | "FALSE"
 
+bounds: expr ":" expr
+index: "[" expr ("," expr)? "]"
 ?type: TYPE
-     | "ARRAY" "[" expr ":" expr "]" "OF" TYPE
+     | "ARRAY" "[" bounds ("," bounds)? "]" "OF" TYPE
 
 assignment: NAME "<-" expr
-index_assignment: NAME "[" expr "]" "<-" expr
+index_assignment: NAME index "<-" expr
 declaration: "DECLARE" NAME ":" type
 constant: "CONSTANT" NAME "=" expr
 
@@ -54,7 +56,7 @@ constant: "CONSTANT" NAME "=" expr
        | NAME          -> var
        | "(" expr ")"
        | NAME arg_list -> call_function
-       | factor "[" expr "]" -> get_index
+       | factor index -> get_index
        | "LENGTH" "(" expr ")"  -> length
        | TYPE "(" expr ")" -> type_cast
 

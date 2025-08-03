@@ -142,18 +142,30 @@ class Interpreter(Interpreter):
 
     @catch_error
     def declaration(self, tree):
-        name, type = tree.children
+        name, block = tree.children
 
-        if hasattr(type, "data"):
-            l, u, type = *map(self.visit, type.children[:2]), type.children[2]
+        if hasattr(block, "data"):
+            dimensions = []
+
+            for bounds in block.children[:-1]:
+                l, u = map(self.visit, bounds.children)
+
+                assert isinstance(l, int) and isinstance(u, int), self.get_error("Array indices must be integers", tree)
+                assert u >= l, "Invalid array bounds"
+                assert l == 1, "Array must be 1-indexed"
+
+                dimensions.append((l, u))
+
+            type = block.children[-1]
+
+            value = [self.types[type].default] * dimensions[0][1]
             
-            assert isinstance(l, int) and isinstance(u, int), self.get_error("Array indices must be integers", tree)
-            assert u >= l, "Invalid array bounds"
-            assert l == 1, "Array must be 1-indexed"
+            if len(dimensions) > 1:
+                value = [value[:] for _ in range(dimensions[1][1])]
 
-            self.scope.define(str(name), Variable(self.types["ARRAY"], [self.types[type].default] * u, True, type))
+            self.scope.define(str(name), Variable(self.types["ARRAY"], value, True, type))
         else:
-            self.scope.define(str(name), Variable(self.types[type], self.types[type].default, True))
+            self.scope.define(str(name), Variable(self.types[block], self.types[block].default, True))
 
     @catch_error
     def constant(self, tree):
@@ -167,25 +179,38 @@ class Interpreter(Interpreter):
 
     @catch_error
     def index_assignment(self, tree):
-        name, index, value = tree.children[0], *map(self.visit, tree.children[1:])
+        name, indices, value = tree.children[0], *map(self.visit, tree.children[1:])
 
         var = self.scope.get(name)
     
         assert isinstance(var, list), f'Cannot apply index assignment to "{self.get_type(var)}"'
-        assert type(value) == type(var[0]), f'Assignment type mismatch, expected "{self.get_type(var[0])}"'
-        self.check_index(var, index)
+        
+        if len(indices) == 1 and isinstance(var[0], list):
+            raise Exception(f'Cannot assign to "{self.get_type(var[0])}"')
 
-        self.scope.assign_index(name, index - 1, value)
+        assert type(value) == type(var[0][0] if len(indices) > 1 else var[0]), f'Assignment type mismatch, expected "{self.get_type(var[0])}"'
+
+        for index in indices:
+            self.check_index(var, index)
+
+        self.scope.assign_index(name, [*map(lambda x: x-1, indices)], value)
 
     # indexing
     @catch_error
     def get_index(self, tree):
-        value, index = map(self.visit, tree.children)
+        value, indices = map(self.visit, tree.children)
 
         assert type(value) in [str, list], f'Cannot apply indexing to "{self.get_type(value)}"'
-        self.check_index(value, index)
+        
+        if len(indices) > 1 and not isinstance(value[0], list):
+            raise Exception(f'Cannot apply 2D indexing to "{self.get_type(value)}"')
 
-        return value[index - 1]
+        for index in indices:
+            self.check_index(value, index)
+
+        indices = [*map(lambda x: x-1, indices)]
+
+        return value[indices[0]][indices[1]] if len(indices) > 1 else value[indices[0]]
 
     # i/o
     @catch_error

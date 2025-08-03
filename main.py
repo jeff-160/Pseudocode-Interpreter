@@ -35,11 +35,11 @@ def main():
         Interpreter(file_path, program, args.no_newlines).visit(ast)
     except FileNotFoundError:
         print(f'Could not locate file: "{file_path}"')
-    except Exception as e:
-        if hasattr(e, "get_context"):
-            print(format_error(file_path, e.line, str(e).splitlines()[0], program.split("\n")[e.line - 1]))
-        else:
-            print(e)
+    # except Exception as e:
+    #     if hasattr(e, "get_context"):
+    #         print(format_error(file_path, e.line, str(e).splitlines()[0], program.split("\n")[e.line - 1]))
+    #     else:
+    #         print(e)
 
 if __name__ == "__main__":
     main()
