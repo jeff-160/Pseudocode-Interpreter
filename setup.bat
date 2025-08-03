@@ -16,10 +16,13 @@ cd /d "%~dp0" && ( if exist "%temp%\getadmin.vbs" del "%temp%\getadmin.vbs" ) &&
 for /f "tokens=3 delims=\" %%a in ("!cd!") do set "username=%%a"
 set "NEWUSER=C:\Users\%username%"
 
+call :print "Copying files" Yellow
 set "pseudo=%NEWUSER%\pseudo"
 xcopy %cd% "%pseudo%" /E /I /Y > nul
 cd /d "%pseudo%"
+call :print "Copied files to %pseudo%" Green
 
+echo.
 
 call :print "Adding path to system environment variables" Yellow
 echo %PATH% | find /i "%cd%" > nul
