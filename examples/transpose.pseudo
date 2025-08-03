@@ -1,0 +1,33 @@
+// transposes a 2x3 matrix
+
+BEGIN
+    FUNCTION transpose(m: ARRAY OF ARRAY OF INTEGER) RETURNS ARRAY OF ARRAY OF INTEGER
+        DECLARE rows: INTEGER
+        DECLARE cols: INTEGER
+        rows <- LENGTH(m)
+        cols <- LENGTH(m[1])
+
+
+        DECLARE t: ARRAY[1:cols, 1:rows] OF INTEGER
+
+        FOR i <- 1 TO rows
+            FOR j <- 1 TO cols
+                t[j, i] <- m[i, j]
+            ENDFOR
+        ENDFOR
+
+        RETURN t
+    ENDFUNCTION
+
+
+    DECLARE m : ARRAY[1:2, 1:3] OF INTEGER
+    
+    FOR i <- 1 TO LENGTH(m)
+        FOR j <- 1 TO LENGTH(m[1])
+            m[i, j] <- j + (i - 1) * LENGTH(m[1])
+        ENDFOR
+    ENDFOR
+
+    OUTPUT "Before:", m
+    OUTPUT "After:", transpose(m)
+END

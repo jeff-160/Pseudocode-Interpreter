@@ -1,0 +1,37 @@
+// prompts the user for an array of 5 integers, then runs it through an insertion sort
+
+BEGIN
+    FUNCTION insertion_sort(a: ARRAY OF INTEGER) RETURNS ARRAY OF INTEGER
+        DECLARE n : INTEGER
+        n <- LENGTH(a)
+
+        FOR i <- 2 TO n
+            DECLARE key : INTEGER
+            key <- a[i]
+
+            DECLARE j : INTEGER
+            j <- i - 1
+
+            WHILE j >= 1 AND a[j] > key DO
+                a[j + 1] <- a[j]
+
+                j <- j - 1
+            ENDWHILE
+
+            a[j + 1] <- key
+        ENDFOR
+
+        RETURN a
+    ENDFUNCTION
+    
+
+    DECLARE t : ARRAY[1:5] OF INTEGER
+
+    FOR i <- 1 TO LENGTH(t)
+        INPUT n
+
+        t[i] <- INTEGER(n)
+    ENDFOR
+
+    OUTPUT insertion_sort(t)
+END

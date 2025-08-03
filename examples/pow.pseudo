@@ -1,0 +1,13 @@
+// outputs the square of a user-inputed number until -1 is entered
+
+BEGIN
+    PROCEDURE square(n: INTEGER)
+        OUTPUT n * n
+    ENDPROCEDURE
+
+    REPEAT
+        INPUT inp
+
+        CALL square(INTEGER(inp))
+    UNTIL inp = "-1"
+END
