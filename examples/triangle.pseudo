@@ -1,0 +1,14 @@
+// prints a triangle of height n
+// run with --no-newlines for proper outputting
+
+BEGIN
+    INPUT n
+
+    FOR i <- 1 TO INTEGER(n)
+        FOR j <- 1 TO i
+            OUTPUT "*"
+        ENDFOR 
+        
+        OUTPUT "\n"
+    ENDFOR
+END
