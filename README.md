@@ -24,20 +24,19 @@ This was created due to the lack of existing interpreters that follow the H2 com
 
 ## Setup
 
-### Full Windows support
+### Windows setup
 ```bash
 > git clone jeff-160/Pseudocode-Interpreter
 > cd Pseudocode-Interpreter
 > setup.bat
 
-> pseudo <filename>
+> pseudo -h
 ```
 
 ### Run with Python
 ```bash
 > pip install lark
-
-> python pseudo.py <filename>
+> python pseudo.py -h
 ```
 
 --- 
