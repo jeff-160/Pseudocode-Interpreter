@@ -46,17 +46,26 @@ class Interpreter(Interpreter):
 
     def catch_error(func):
         def wrapper(self, tree):
-            return func(self, tree)
             try:
                 try:
                     return func(self, tree)
-                except ReturnCall:
-                    raise
                 except TypeError:
                     a, b = map(self.visit, tree.children)
                     raise Exception(f'Operation not supported between "{get_type(a)}" and "{get_type(b)}"')
+            except ReturnCall:
+                raise
             except Exception as e:
                 exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
+        return wrapper
+    
+    def scoped(func):
+        def wrapper(self, *args, **kwargs):
+            self.scope.add_scope()
+            
+            func(self, *args, **kwargs)
+
+            self.scope.remove_scope()
+        
         return wrapper
 
     # data types
@@ -221,6 +230,7 @@ class Interpreter(Interpreter):
         self.scope.define(tree.children[0], Variable(TYPES["STRING"], input(), True))
 
     # conditionals
+    @scoped
     @catch_error
     def conditional(self, tree):
         for branch in tree.children[0].children:
@@ -233,6 +243,7 @@ class Interpreter(Interpreter):
                     self.visit(stmt)
             return
 
+    @scoped
     @catch_error
     def switch(self, tree):
         block = tree.children[0].children
@@ -254,24 +265,20 @@ class Interpreter(Interpreter):
                 return
      
     # loops
+    @scoped
     @catch_error
     def while_loop(self, tree):
         block = tree.children[0].children
-
-        self.scope.add_scope()
 
         while self.visit(block[0]):
             for stmt in block[1:]:
                 if not self.check_newline(stmt):
                     self.visit(stmt)
-        
-        self.scope.remove_scope()
 
+    @scoped
     @catch_error
     def repeat_until(self, tree):
         block = [line for line in tree.children[0].children if not self.check_newline(line)]
-
-        self.scope.add_scope()
 
         condition = True
 
@@ -281,8 +288,7 @@ class Interpreter(Interpreter):
                 
             condition = not self.visit(block[-1])
 
-        self.scope.remove_scope()
-
+    @scoped
     @catch_error
     def for_loop(self, tree):
         block = tree.children[0].children
@@ -293,8 +299,6 @@ class Interpreter(Interpreter):
         iterator, start, stop = block[0], self.visit(block[1]), self.visit(block[2]) + (-1 if step < 0 else 1)
 
         assert step != 0, "Iteration step cannot be 0"
-
-        self.scope.add_scope()
         
         self.scope.define(iterator, Variable(TYPES['INTEGER'], start, True))
 
@@ -304,8 +308,6 @@ class Interpreter(Interpreter):
             for stmt in block[4:] if is_step else block[3:]:
                 if not self.check_newline(stmt):
                     self.visit(stmt)
-
-        self.scope.remove_scope()
 
     # subroutines
     def set_args(self, params, args):
