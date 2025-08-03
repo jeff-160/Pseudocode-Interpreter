@@ -180,7 +180,7 @@ class Interpreter(Interpreter):
     @catch_error
     def constant(self, tree):
         name, value = tree.children[0], self.visit(tree.children[1])
-        self.scope.define(str(name), Variable(None, value, False))
+        self.scope.define(str(name), Variable(TYPES[get_type(value)], value, False))
 
     @catch_error
     def assignment(self, tree):
