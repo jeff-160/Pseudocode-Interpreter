@@ -19,14 +19,14 @@ arg_parser.add_argument(
 
 
 def get_parser():
-    syntax_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "syntax.lark")
-
-    with open(syntax_file, "r") as f:
+    root = os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__)
+    
+    with open(os.path.join(root, "syntax.lark"), "r") as f:
         grammar = f.read().strip()
 
     return Lark(grammar, parser='lalr', propagate_positions=True)
 
-def main():
+def main():    
     args = arg_parser.parse_args()
     file_path = args.file
 
@@ -37,6 +37,8 @@ def main():
 
         with open(os.path.join(os.getcwd(), file_path), "r") as f:
             program = "\n".join([line.strip() for line in f.read().split("\n")])
+
+        file_path = os.path.basename(file_path)
         
         ast = get_parser().parse(program)
         Interpreter(file_path, program, args.no_newlines).visit(ast)
