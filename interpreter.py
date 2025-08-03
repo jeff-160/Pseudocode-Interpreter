@@ -55,7 +55,9 @@ class Interpreter(Interpreter):
             except ReturnCall:
                 raise
             except Exception as e:
-                exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
+                import sys
+                
+                sys.exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
         return wrapper
     
     def scoped(func):
