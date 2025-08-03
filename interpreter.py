@@ -45,9 +45,13 @@ class Interpreter(Interpreter):
             if raw_type == self.types[i].bind:
                 return type_repr(i, self.get_type(value[0]) if i == "ARRAY" else None)
             
-    def check_index(self, collection, index):
-        assert isinstance(index, int), "Index must be an integer"
-        assert index in range(1, len(collection) + 1), f'Index "{index}" out of bounds'
+    def check_indices(self, collection, indices):
+        for i in range(len(indices)):
+            index = indices[i]
+            a = collection[0] if len(indices) > 1 and i > 0 else collection
+
+            assert isinstance(index, int), "Index must be an integer"
+            assert index in range(1, len(a) + 1), f'Index "{index}" out of bounds'
 
     def catch_error(func):
         def wrapper(self, tree):
@@ -158,10 +162,12 @@ class Interpreter(Interpreter):
 
             type = block.children[-1]
 
-            value = [self.types[type].default] * dimensions[0][1]
             
             if len(dimensions) > 1:
-                value = [value[:] for _ in range(dimensions[1][1])]
+                value = [[self.types[type].default] * dimensions[1][1] for _ in range(dimensions[0][1])]
+            else:
+                value = [self.types[type].default] * dimensions[0][1]
+
 
             self.scope.define(str(name), Variable(self.types["ARRAY"], value, True, type))
         else:
@@ -190,8 +196,7 @@ class Interpreter(Interpreter):
 
         assert type(value) == type(var[0][0] if len(indices) > 1 else var[0]), f'Assignment type mismatch, expected "{self.get_type(var[0])}"'
 
-        for index in indices:
-            self.check_index(var, index)
+        self.check_indices(var, indices)
 
         self.scope.assign_index(name, [*map(lambda x: x - 1, indices)], value)
 
@@ -205,8 +210,7 @@ class Interpreter(Interpreter):
         if len(indices) > 1 and not isinstance(value[0], list):
             raise Exception(f'Cannot apply 2D indexing to "{self.get_type(value)}"')
 
-        for index in indices:
-            self.check_index(value, index)
+        self.check_indices(value, indices)
 
         indices = [*map(lambda x: x - 1, indices)]
 
@@ -314,10 +318,15 @@ class Interpreter(Interpreter):
             if isinstance(arg, list):
                 arg = arg[:]
 
-            param_type = type_repr(params[i][1].type.name, getattr(params[i][1].sub_type, "name", None))
+            if isinstance(params[i][1].sub_type, Param):
+                sub_type = type_repr(params[i][1].sub_type.type.name, params[i][1].sub_type.sub_type.name)
+            else:
+                sub_type = getattr(params[i][1].sub_type, "name", None)
+
+            param_type = type_repr(params[i][1].type.name, sub_type)
             assert self.get_type(arg) == param_type, f'Expected "{param_type}" argument type, got "{self.get_type(arg)}"'
 
-            self.scope.define(params[i][0], Variable(self.types[param_type], arg, True))
+            self.scope.define(params[i][0], Variable(self.types[params[i][1].type.name], arg, True))
 
     def get_params(self, param_tree):
         offset = 1
