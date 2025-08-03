@@ -55,11 +55,11 @@ class Interpreter(Interpreter):
                 return func(self, tree)
             except ReturnCall:
                 raise
-            except TypeError:
-                a, b = map(self.visit, tree.children)
-                raise Exception(f'Operation not supported between "{self.get_type(a)}" and "{self.get_type(b)}"')
-            except Exception as e:
-                exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
+            # except TypeError:
+            #     a, b = map(self.visit, tree.children)
+            #     raise Exception(f'Operation not supported between "{self.get_type(a)}" and "{self.get_type(b)}"')
+            # except Exception as e:
+            #     exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
         return wrapper
 
     # data types
@@ -193,7 +193,7 @@ class Interpreter(Interpreter):
         for index in indices:
             self.check_index(var, index)
 
-        self.scope.assign_index(name, [*map(lambda x: x-1, indices)], value)
+        self.scope.assign_index(name, [*map(lambda x: x - 1, indices)], value)
 
     # indexing
     @catch_error
@@ -208,7 +208,7 @@ class Interpreter(Interpreter):
         for index in indices:
             self.check_index(value, index)
 
-        indices = [*map(lambda x: x-1, indices)]
+        indices = [*map(lambda x: x - 1, indices)]
 
         return value[indices[0]][indices[1]] if len(indices) > 1 else value[indices[0]]
 
@@ -315,10 +315,9 @@ class Interpreter(Interpreter):
                 arg = arg[:]
 
             param_type = type_repr(params[i][1].type.name, getattr(params[i][1].sub_type, "name", None))
-
             assert self.get_type(arg) == param_type, f'Expected "{param_type}" argument type, got "{self.get_type(arg)}"'
 
-            self.scope.define(params[i][0], Variable(param_type, arg, True))
+            self.scope.define(params[i][0], Variable(self.types[param_type], arg, True))
 
     def get_params(self, param_tree):
         offset = 1
@@ -331,7 +330,10 @@ class Interpreter(Interpreter):
                 assert name not in params, f'Duplicate parameter name "{name}"'
 
                 if getattr(type, "data", None) == "arg_param":
-                    params[str(name)] = Param(self.types["ARRAY"], self.types[type.children[0]])
+                    if getattr(type.children[0], "data", None) == "arg_param":
+                        params[str(name)] = Param(self.types["ARRAY"], Param(self.types["ARRAY"], self.types[type.children[0].children[0]]))
+                    else:
+                        params[str(name)] = Param(self.types["ARRAY"], self.types[type.children[0]])
                 else:
                     params[str(name)] = Param(self.types[type])
             offset += 1

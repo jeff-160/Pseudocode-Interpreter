@@ -75,7 +75,7 @@ repeat_until: "REPEAT" NEWLINE statement+ "UNTIL" expr
 step: "STEP" expr
 for_loop: "FOR" NAME "<-" expr "TO" expr step? NEWLINE statement+ "ENDFOR"
 
-arg_param: "ARRAY" "OF" TYPE
+arg_param: "ARRAY" "OF" (TYPE | arg_param)
 ?param_type: TYPE | arg_param
 param: NAME ":" param_type
 param_list: param ("," param)*

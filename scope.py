@@ -28,10 +28,10 @@ class Scope:
     def assign(self, name, value):
         for scope in self.stack[::-1]:
             if name in scope:
-                assert scope[name].type.name != "ARRAY", f'Cannot assign to "{type_repr(scope[name], scope[name].subtype)}"'
+                assert scope[name].type.name != "ARRAY", f'Cannot assign to "{type_repr(scope[name].type.name, scope[name].subtype)}"'
                 assert isinstance(scope[name], Variable), f'Cannot assign to "{str(scope[name])}"'
                 assert scope[name].mutable, f'Cannot assign to constant "{name}"'
-                assert type(value) == scope[name].type.bind, f'Assignment type mismatch, expected "{type_repr(scope[name], scope[name].subtype)}"'
+                assert type(value) == scope[name].type.bind, f'Assignment type mismatch, expected "{type_repr(scope[name].type.name, scope[name].subtype)}"'
                 
                 scope[name].value = value
                 return
