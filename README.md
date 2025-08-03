@@ -50,5 +50,7 @@ Refer to the [pseudocode guide](documentation.pdf) for the specific syntax rules
 
 ## Notes
 
+- Strict typing is enforced (ie. no implicit type casting)
 - `CHAR` and `STRING` use different quotes: `''` and `""` respectively
+- `STRING` and `ARRAY` are 1-indexed
 - Arguments are passed into subroutines by value, not reference
