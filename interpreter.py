@@ -46,13 +46,15 @@ class Interpreter(Interpreter):
 
     def catch_error(func):
         def wrapper(self, tree):
+            return func(self, tree)
             try:
-                return func(self, tree)
-            except ReturnCall:
-                raise
-            except TypeError:
-                a, b = map(self.visit, tree.children)
-                raise Exception(f'Operation not supported between "{get_type(a)}" and "{get_type(b)}"')
+                try:
+                    return func(self, tree)
+                except ReturnCall:
+                    raise
+                except TypeError:
+                    a, b = map(self.visit, tree.children)
+                    raise Exception(f'Operation not supported between "{get_type(a)}" and "{get_type(b)}"')
             except Exception as e:
                 exit(format_error(self.file, tree.meta.line, e, self.code.splitlines()[tree.meta.line - 1]))
         return wrapper
@@ -323,6 +325,15 @@ class Interpreter(Interpreter):
 
             self.scope.define(params[i][0], Variable(TYPES[params[i][1].type.name], arg, True))
 
+    def get_param(self, block):
+        if getattr(block, "data", None) == "arg_param":
+            if getattr(block.children[0], "data", None) == "arg_param":
+                return Param(TYPES["ARRAY"], Param(TYPES["ARRAY"], TYPES[block.children[0].children[0]]))
+            else:
+                return Param(TYPES["ARRAY"], TYPES[block.children[0]])
+        else:
+            return Param(TYPES[block])
+
     def get_params(self, param_tree):
         offset = 1
         params = {}
@@ -333,13 +344,7 @@ class Interpreter(Interpreter):
 
                 assert name not in params, f'Duplicate parameter name "{name}"'
 
-                if getattr(type, "data", None) == "arg_param":
-                    if getattr(type.children[0], "data", None) == "arg_param":
-                        params[str(name)] = Param(TYPES["ARRAY"], Param(TYPES["ARRAY"], TYPES[type.children[0].children[0]]))
-                    else:
-                        params[str(name)] = Param(TYPES["ARRAY"], TYPES[type.children[0]])
-                else:
-                    params[str(name)] = Param(TYPES[type])
+                params[str(name)] = self.get_param(type)
             offset += 1
 
         return params, offset
@@ -381,10 +386,7 @@ class Interpreter(Interpreter):
 
         params, body = self.get_params(block[1])
 
-        if getattr(block[body], "data", None) == "arg_param":
-            ret_type = Param(TYPES["ARRAY"], TYPES[block[body].children[0]])
-        else:
-            ret_type = Param(TYPES[block[body]])
+        ret_type = self.get_param(block[body])
 
         self.scope.define(str(block[0]), Function(ret_type, params, block[body + 1:]))
 

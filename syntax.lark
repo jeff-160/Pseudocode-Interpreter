@@ -84,7 +84,7 @@ arg_list: "(" (expr ("," expr)*)? ")"
 opt_arg_list: "(" expr ("," expr)* ")"
 
 procedure: "PROCEDURE" NAME ("(" param_list ")")? NEWLINE statement+ "ENDPROCEDURE"
-function: "FUNCTION" NAME "(" param_list? ")" "RETURNS" param_type  NEWLINE statement+ "ENDFUNCTION"
+function: "FUNCTION" NAME "(" param_list? ")" "RETURNS" param_type NEWLINE statement+ "ENDFUNCTION"
 
 statement: declaration NEWLINE
      | index_assignment NEWLINE
