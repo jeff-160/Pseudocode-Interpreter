@@ -1,3 +1,4 @@
+
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
   "name": "Pseudo",
@@ -5,7 +6,9 @@
   "patterns": [
     { "include": "#comments" },
     { "include": "#keywords" },
+    { "include": "#builtins" },
     { "include": "#types" },
+    { "include": "#modifiers" },
     { "include": "#constants" },
     { "include": "#strings" },
     { "include": "#chars" },
@@ -26,7 +29,15 @@
       "patterns": [
         {
           "name": "keyword.control.pseudo",
-          "match": "\\b(BEGIN|END|IF|THEN|ELSE|ENDIF|CASE|OF|OTHERWISE|ENDCASE|WHILE|DO|ENDWHILE|REPEAT|UNTIL|FOR|TO|STEP|ENDFOR|PROCEDURE|FUNCTION|RETURNS|ENDPROCEDURE|ENDFUNCTION|CALL|RETURN|OUTPUT|INPUT|DECLARE|CONSTANT|OF|OR|AND|LENGTH)\\b"
+          "match": "\\b(BEGIN|END|IF|THEN|ELSE|ENDIF|CASE|OF|OTHERWISE|ENDCASE|WHILE|DO|ENDWHILE|REPEAT|UNTIL|FOR|TO|STEP|ENDFOR|PROCEDURE|FUNCTION|RETURNS|ENDPROCEDURE|ENDFUNCTION|CALL|RETURN|OF|OR|AND)\\b"
+        }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {
+          "name": "support.function.pseudo",
+          "match": "\\b(OUTPUT|INPUT|LENGTH)\\b"
         }
       ]
     },
@@ -35,6 +46,14 @@
         {
           "name": "storage.type.pseudo",
           "match": "\\b(INTEGER|REAL|STRING|BOOLEAN|CHAR|ARRAY)\\b"
+        }
+      ]
+    },
+    "modifiers": {
+      "patterns": [
+        {
+          "name": "storage.modifier.pseudo",
+          "match": "\\b(DECLARE|CONSTANT)\\b"
         }
       ]
     },
