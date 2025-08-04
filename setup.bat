@@ -34,4 +34,16 @@ if errorlevel 1 (
 )
 
 echo.
+
+call :print "Installing VSCode extension" Yellow
+set "dest=%NEWUSER%\\.vscode\\extensions"
+set "dir=pseudo-syntax-highlighting"
+if exist "%dest%" (
+    xcopy "%cd%\\%dir%" "%dest%\\%dir%" /E /I /Y > nul
+    call :print "VSCode extension installed" Green
+) else (
+    call :print "VSCode extension path not found" Red
+)
+
+echo.
 pause
