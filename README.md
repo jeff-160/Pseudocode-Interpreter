@@ -2,7 +2,9 @@
 
 A toy interpreted language based on the H2 computing pseudocode guide.  
   
-This was created due to the lack of existing interpreters that follow the H2 computing pseudocode standard, and as such, is meant as a tool to help students practice and better familiarise themselves with the syntax rules of pseudocode.  
+This was created due to the lack of existing interpreters that follow the H2 computing pseudocode standard, and as such, is meant as a tool to help students practice and better familiarise themselves with the syntax rules of pseudocode. 
+
+Update (4/8/25): just found out theres already existing pseudocode interpreters but this ones cooler cuz theres vscode syntax highlighting
 
 ---
 
@@ -25,6 +27,11 @@ This was created due to the lack of existing interpreters that follow the H2 com
 ## Setup
 
 ### Windows setup
+
+The setup script will:
+- add `pseudo` to system `PATH` for easy access
+- install the VSCode syntax highlighting extension
+
 ```bash
 > git clone jeff-160/Pseudocode-Interpreter
 > cd Pseudocode-Interpreter
