@@ -1,0 +1,97 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Pseudo",
+  "scopeName": "source.pseudo",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#types" },
+    { "include": "#constants" },
+    { "include": "#strings" },
+    { "include": "#chars" },
+    { "include": "#numbers" },
+    { "include": "#operators" },
+    { "include": "#identifiers" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.pseudo",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.pseudo",
+          "match": "\\b(BEGIN|END|IF|THEN|ELSE|ENDIF|CASE|OF|OTHERWISE|ENDCASE|WHILE|DO|ENDWHILE|REPEAT|UNTIL|FOR|TO|STEP|ENDFOR|PROCEDURE|FUNCTION|RETURNS|ENDPROCEDURE|ENDFUNCTION|CALL|RETURN|OUTPUT|INPUT|DECLARE|CONSTANT|OF|OR|AND|LENGTH)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.pseudo",
+          "match": "\\b(INTEGER|REAL|STRING|BOOLEAN|CHAR|ARRAY)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.pseudo",
+          "match": "\\b(TRUE|FALSE)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.pseudo",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.pseudo",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "chars": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.pseudo",
+          "match": "'(\\\\[0-9]{1,3}|\\\\x[0-9A-Fa-f]{2}|\\\\.|[^\\\\'])'"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.pseudo",
+          "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.pseudo",
+          "match": "<-|=|<>|>=|<=|>|<|\\+|-|\\*|/|%"
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "name": "variable.other.pseudo",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "pseudo-syntax",
+  "displayName": ".pseudo",
+  "description": "Syntax highlighting for pseudocode",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "pseudo",
+      "aliases": ["Pseudo", "pseudo"],
+      "extensions": [".pseudo"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "pseudo",
+      "scopeName": "source.pseudo",
+      "path": "./syntaxes/pseudo.tmLanguage.json"
+    }]
+  }
+}
