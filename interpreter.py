@@ -111,6 +111,10 @@ class Interpreter(Interpreter):
     
     # logical operators
     @catch_error
+    def not_op(self, tree):
+        return not self.visit(tree.children[0])
+
+    @catch_error
     def and_op(self, tree):
         return self.visit(tree.children[0]) and self.visit(tree.children[1])
 

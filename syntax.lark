@@ -49,6 +49,7 @@ constant: "CONSTANT" NAME "=" expr
      | factor
 
 ?factor: "-" factor    -> neg
+       | "NOT" factor    -> not_op
        | NUMBER        -> number
        | STRING        -> string
        | CHAR          -> char
