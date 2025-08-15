@@ -61,7 +61,7 @@
       "patterns": [
         {
           "name": "constant.language.boolean.pseudo",
-          "match": "\\b(TRUE|FALSE)\\b"
+          "match": "\\b(TRUE|FALSE|NOT)\\b"
         }
       ]
     },
